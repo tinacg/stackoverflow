@@ -1,0 +1,5 @@
+Answers in Stack Overflow are licensed under CC-BY-SA
+
+http://creativecommons.org/licenses/by-sa/2.5/
+
+Reference: http://meta.stackexchange.com/questions/54766/code-at-stackoverflow-under-any-license
