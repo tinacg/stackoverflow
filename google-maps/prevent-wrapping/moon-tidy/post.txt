@@ -1,0 +1,396 @@
+I got burned by JSFiddle deleting my demo, so I reworked the solution, and am posting the demo below with SO's built-in preview.
+
+The original solution assigns the image's coordinates to +/-50 degrees, but I couldn't reproduce this behavior. Currently the demo uses +/-85 deg. latitude and +/-180 longitude with the default Mercator projection.
+
+I haven't tested the new solution thoroughly, so use it with caution. (I used Firefox). My main observations are:
+
+1. First, the solution is hacky. I couldn't work out the math behind the Mercator latitude and the corresponding distance on the screen. As the latitude increases, so does the space it takes up on the screen. What I do is re-compute the midpoint between the limits of the map bounds when the map is moved. To make this hack work, the acceptable bounds are dictated by the map's div's height.
+
+2. On the other hand, longitude behaves normally. The trick with longitude is that it repeats, so markers and other items showing up at this limit will be duplicated. I don't know how to solve this problem.
+
+
+<!-- begin snippet: js hide: false -->
+
+<!-- language: lang-js -->
+
+    "use strict";
+
+    // observations
+    //
+    // map does wrap around at longitudes +/-180; however, tile display can be
+    // manipulated to only show up once.
+    //
+    // markers placed around longiudes +/-180 will show up twice. Not sure how to
+    // prevent this.
+
+    // HACK FOR LIMITING Y-AXIS, USE height of DIV used in HTML
+    var divHeight = document.getElementById("map-canvas").clientHeight;
+
+    var TILE_SIZE = 256;
+
+    var map;
+    var allowedBounds;
+
+    var bounds;
+    var sw;
+    var ne;
+    var width;
+    var height;
+
+    // https://developers.google.com/maps/documentation/javascript/examples/map-coordinates
+
+    function degreesToRadians(deg) {
+      return deg * (Math.PI / 180);
+    }
+
+    function radiansToDegrees(rad) {
+      return rad / (Math.PI / 180);
+    }
+
+    function bound(value, opt_min, opt_max) {
+      if (opt_min != null) value = Math.max(value, opt_min);
+      if (opt_max != null) value = Math.min(value, opt_max);
+      return value;
+    }
+
+    function fromLatLngToPoint(latLng, map) {
+      var point = new google.maps.Point(0, 0);
+      var origin = new google.maps.Point(TILE_SIZE/2, TILE_SIZE/2);
+
+      var pixelsPerLonDegree_ = TILE_SIZE / 360;
+      var pixelsPerLonRadian_ = TILE_SIZE / (2 * Math.PI);
+
+      point.x = origin.x + latLng.lng() * pixelsPerLonDegree_;
+
+      // Truncating to 0.9999 effectively limits latitude to 89.189. This is
+      // about a third of a tile past the edge of the world tile.
+      var siny = bound(Math.sin(degreesToRadians(latLng.lat())), -0.9999,
+                       0.9999);
+      point.y = origin.y + 0.5 * Math.log((1 + siny) / (1 - siny)) *
+        -pixelsPerLonRadian_;
+      return point;
+    }
+
+    function fromPointToLatLng(point) {
+      // value from 0 to 256
+      var pixelOrigin_ = new google.maps.Point(TILE_SIZE / 2,
+                                               TILE_SIZE / 2);
+      var origin = new google.maps.Point(TILE_SIZE/2, TILE_SIZE/2);
+
+      var pixelsPerLonDegree_ = TILE_SIZE / 360;
+      var pixelsPerLonRadian_ = TILE_SIZE / (2 * Math.PI);
+
+      var origin = pixelOrigin_;
+      var lng = (point.x - origin.x) / pixelsPerLonDegree_;
+      var latRadians = (point.y - origin.y) / -pixelsPerLonRadian_;
+      var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) -
+                                 Math.PI / 2);
+      return new google.maps.LatLng(lat, lng);
+    };
+
+    function midpointLat() {
+      var tileFactor = 1 << map.getZoom();
+      var midpointFromTop = divHeight / tileFactor / 2;
+      return fromPointToLatLng(new google.maps.Point(0, midpointFromTop)).lat();
+    }
+
+    function addMarker(lat, lng) {
+      new google.maps.Marker({
+        position: new google.maps.LatLng(lat, lng),
+      }).setMap(map);
+    }
+
+    function addIcon(lat, lng, url) {
+      new google.maps.Marker({
+        position: new google.maps.LatLng(lat, lng),
+        icon: url,
+      }).setMap(map);
+    }
+
+    function updateEdge() {
+      bounds = map.getBounds();
+      
+      sw = bounds.getSouthWest();
+      ne = bounds.getNorthEast();
+
+      var swLng = sw.lng();
+      var swLat = sw.lat();
+
+      var neLng = ne.lng();
+      var neLat = ne.lat();
+      
+      if (swLng > neLng) {
+        swLng -= 360;
+      } 
+      width = neLng - swLng;
+      
+      var left = Math.min(-180+(width/2),-0.000001);
+      var right = Math.max(180-(width/2),0.000001);
+      
+      var divCenterLat = fromPointToLatLng(new google.maps.Point(0, divHeight)).lat();
+      var currentZoom = map.getZoom();
+
+      var top = midpointLat();
+      var bottom = -midpointLat();
+      
+      allowedBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(bottom,left),
+        new google.maps.LatLng(top,right));
+
+    }
+
+    function boxIn() {
+      if (allowedBounds.contains(map.getCenter())) {
+        return;
+      } else {
+        var mapCenter = map.getCenter();
+        var X = mapCenter.lng();
+        var Y = mapCenter.lat();
+
+        var AmaxX = allowedBounds.getNorthEast().lng();
+        var AmaxY = allowedBounds.getNorthEast().lat();
+        var AminX = allowedBounds.getSouthWest().lng();
+        var AminY = allowedBounds.getSouthWest().lat();
+
+        if (X < AminX) {
+          X = AminX;
+        }
+        if (X > AmaxX) {
+          X = AmaxX;
+        }
+        if (Y < AminY) {
+          Y = AminY;
+        }
+        if (Y > AmaxY) {
+          Y = AmaxY;
+        }
+        map.setCenter(new google.maps.LatLng(Y, X));
+      }
+    }
+
+    var moonTypeOptions = {
+      getTileUrl: function(coord, zoom) {
+        var normalizedCoord = getNormalizedCoord(coord, zoom);
+        if (!normalizedCoord) {
+          return null;
+        }
+        var bound = Math.pow(2, zoom);
+        return 'http://mw1.google.com/mw-planetary/lunar/lunarmaps_v1/clem_bw' +
+          
+        '/' + zoom + '/' + normalizedCoord.x + '/' +  
+          (bound - normalizedCoord.y - 1) + '.jpg';
+      },
+      tileSize: new google.maps.Size(256, 256),
+      maxZoom: 9,
+      minZoom: 0,
+      radius: 100,
+      name: 'Moon'
+    };
+
+    var moonMapType = new google.maps.ImageMapType(moonTypeOptions);
+
+
+    // Normalizes the coords that tiles repeat across the x axis (horizontally)
+    // like the standard Google map tiles.
+    function getNormalizedCoord(coord, zoom) {
+      var y = coord.y;
+      var x = coord.x;
+
+      // tile range in one direction range is dependent on zoom level
+      // 0 = 1 tile, 1 = 2 tiles, 2 = 4 tiles, 3 = 8 tiles, etc
+      var tileRange = 1 << zoom;
+
+      // don't repeat across y-axis (vertically)
+      if (y < 0 || y >= tileRange) {
+        return null;
+      }
+
+      if (x < 0 || x >= tileRange) {
+        // ORIGINAL LINE to repeat across x-axis
+        // x = (x % tileRange + tileRange) % tileRange;
+
+        // in reality, do not want repeated tiles
+        return null;
+      }
+
+      return {
+        x: x,
+        y: y
+      };
+    }
+
+    function initialize() {
+      var myLatlng = new google.maps.LatLng(0, 0);
+      var mapOptions = {
+        center: myLatlng,
+        zoom: 1,
+        // streetViewControl: false,
+        disableDefaultUI: true,
+      };
+
+      map = new google.maps.Map(document.getElementById('map-canvas'),
+                                mapOptions);
+      map.mapTypes.set('moon', moonMapType);
+      map.setMapTypeId('moon');
+
+
+      google.maps.event.addListener(map, 'tilesloaded', function() {
+        updateEdge();
+      });
+      
+      google.maps.event.addListener(map, 'zoom_changed', function() {
+        updateEdge();
+        boxIn();
+      });
+
+      google.maps.event.addListener(map, 'center_changed', function() {
+        boxIn();
+      });
+
+      google.maps.event.addListener(map, 'click', function(e) {
+        console.log("map clicked at: " + e.latLng.lat() + "," + e.latLng.lng());
+      });
+
+      updateEdge();
+
+      addIcon(0, 0, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=O|00FF00|000000");
+
+      addIcon(85.1, 179, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=TR|00FF00|000000");
+
+      addIcon(-85.1, -179, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=BL|00FF00|000000");
+
+      addIcon(20.1, 9, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=2|00FF00|000000");
+      addIcon(40.1, 9, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=4|00FF00|000000");
+      addIcon(60.1, 9, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=6|00FF00|000000");
+      addIcon(80.1, 9, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=8|00FF00|000000");
+      addIcon(85.1, 9, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=8|00FF00|000000");
+      addIcon(-85.1, 9, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=8|00FF00|000000");
+
+      addIcon(60.1, -179, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=Y|00FF00|000000");
+    }
+
+    google.maps.event.addDomListener(window, 'load', initialize);
+
+
+<!-- language: lang-html -->
+
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Image map types</title>
+        <style>
+          html, body, #map-canvas {
+          height: 450px;
+          width: 450px;
+            margin: 0px;
+            padding: 0px;
+          }
+        </style>
+    	
+        <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+      </head>
+      <body>
+        <div id="map-canvas"></div>
+        <script src="moon.js"></script>
+      </body>
+    </html>
+
+<!-- end snippet -->
+
+
+ORIGINAL 2012 ANSWER:
+
+I combined the forevermore coordinate system and the [documentation's][1] ImageMapTypes example for the [moon's surface][2]
+
+**Demo** http://jsfiddle.net/yV6xv/33/
+
+Initially, the demo starts at zoom 0, to give an idea of the whole image. After zooming in, panning will be restricted to a rectangle with an aspect ratio defined by the (W)idth and (H)eight textboxes. For this demo, only this ratio `W/H`, or `H/W` is important.
+
+I'm assuming your images will be similar to both of the above, fitting in 256x256 tiles, and having a "black border" around the image. Furthermore, that the image stretches all the way to the tiles' edge on the longer dimension. If not (but at least, the image is centered), the viewable area can be modified in the `latbound` and `lngbound` variables, which correspond to the coordinate grid `(-50,50) x (-50,50)` defined in forevermore.
+
+In the demo, when zoomed in and W > H, the aspect ratio is longer horizontally: the whole width of the lunar surface is visible around the center, and the top/bottom horizontal bars will be blocked. That is, the dark craters on the top and bottom of the full image will not be reachable at zooms above 0. Visualizing an actual image with the black borders, some of the "black region" might still show at zoom 1, whose area decreases as the zoom level increases.
+
+When zoomed in and H > W, the reachable area extends vertically. The dark craters directly above and below the center of the whole surface will be reachable, but the left/right areas, not. In this demo, the aspect ratio is changed by `updateEdge` reading the textboxes; clicking on Set calls `updateEdge`.
+
+Most of the effort in the code was to prevent the movement outside the desired display area. Both the forevermore method and the "How do I limit Panning" were jumpy or caused errors when I tested, so I came up with a modified version of [Range Limiting][3] that takes into account the current zoom level by measuring the screen width and height:
+
+      function updateEdge() {
+        imageWidth = parseInt(document.getElementById("imgWidth").value);
+        imageHeight = parseInt(document.getElementById("imgHeight").value);
+        if(imageWidth > imageHeight) {
+          widthPercent = 100;
+          heightPercent = imageHeight / imageWidth * 100;
+        }
+        else {
+          heightPercent = 100;
+          widthPercent = imageWidth / imageHeight * 100;
+        }
+    
+        latbound = heightPercent/2.0;
+        lngbound = widthPercent/2.0;
+    
+        var bounds = map.getBounds();
+        var sw = bounds.getSouthWest();
+        var ne = bounds.getNorthEast();
+        var width = ne.lng() - sw.lng();
+        var height = ne.lat() - sw.lat();
+    
+        var bottom = Math.min(-latbound+(height/2),-0.000001);
+        var left = Math.min(-lngbound+(width/2),-0.000001);
+        var top = Math.max(latbound-(height/2),0.000001);
+        var right = Math.max(lngbound-(width/2),0.000001);
+    
+        allowedBounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(bottom,left),
+          new google.maps.LatLng(top,right));
+      }
+
+
+    google.maps.event.addListener(map, 'tilesloaded', function() {
+        updateEdge();
+    });
+    google.maps.event.addListener(map, 'zoom_changed', function() {
+        updateEdge();
+        boxIn();
+    });
+    
+    google.maps.event.addListener(map, 'center_changed', function() {
+        boxIn();
+    });
+    
+    function boxIn() {
+        if (allowedBounds.contains(map.getCenter())) {
+            return;
+        }
+        else {
+            var mapCenter = map.getCenter();
+            var X = mapCenter.lng();
+            var Y = mapCenter.lat();
+    
+            var AmaxX = allowedBounds.getNorthEast().lng();
+            var AmaxY = allowedBounds.getNorthEast().lat();
+            var AminX = allowedBounds.getSouthWest().lng();
+            var AminY = allowedBounds.getSouthWest().lat();
+    
+            if (X < AminX) {
+                X = AminX;
+            }
+            if (X > AmaxX) {
+                X = AmaxX;
+            }
+            if (Y < AminY) {
+                Y = AminY;
+            }
+            if (Y > AmaxY) {
+                Y = AmaxY;
+            }
+    
+            map.setCenter(new google.maps.LatLng(Y, X));
+        }
+    }
+
+The projection and tile fetching code are not significantly changed from their sources.
+
+  [1]: https://developers.google.com/maps/documentation/javascript/maptypes#ImageMapTypes
+  [2]: https://google-developers.appspot.com/maps/documentation/javascript/examples/maptype-image
+  [3]: http://econym.org.uk/gmap/range.htm

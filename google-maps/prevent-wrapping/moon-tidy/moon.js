@@ -8,35 +8,18 @@
 // markers placed around longiudes +/-180 will show up twice. Not sure how to
 // prevent this.
 
-// HACK FOR LIMITING Y-AXIS, COPY height of DIV used in HTML
-var divHeight = 450;
+var divHeight = document.getElementById("map-canvas").clientHeight;
+
+var TILE_SIZE = 256;
 
 var map;
 var allowedBounds;
-var latbound;
-var lngbound;
-
-var widthPercent;
-var heightPercent;
 
 var bounds;
 var sw;
 var ne;
 var width;
 var height;
-
-var latLimitByZoom = [87.2, 70, 60];
-
-var latLimit = 90;
-var lngLimit = 179.5;
-
-var extendedLatLimit = 120;
-
-/*
-var mapLimits = new google.maps.LatLngBounds(
-  new google.maps.LatLng(-latLimit, -lngLimit),
-  new google.maps.LatLng(latLimit, lngLimit));
-*/
 
 // https://developers.google.com/maps/documentation/javascript/examples/map-coordinates
 
@@ -53,8 +36,6 @@ function bound(value, opt_min, opt_max) {
   if (opt_max != null) value = Math.min(value, opt_max);
   return value;
 }
-
-var TILE_SIZE = 256;
 
 function fromLatLngToPoint(latLng, map) {
   var point = new google.maps.Point(0, 0);
@@ -77,7 +58,7 @@ function fromLatLngToPoint(latLng, map) {
 function fromPointToLatLng(point) {
   // value from 0 to 256
   var pixelOrigin_ = new google.maps.Point(TILE_SIZE / 2,
-      TILE_SIZE / 2);
+                                           TILE_SIZE / 2);
   var origin = new google.maps.Point(TILE_SIZE/2, TILE_SIZE/2);
 
   var pixelsPerLonDegree_ = TILE_SIZE / 360;
@@ -87,29 +68,14 @@ function fromPointToLatLng(point) {
   var lng = (point.x - origin.x) / pixelsPerLonDegree_;
   var latRadians = (point.y - origin.y) / -pixelsPerLonRadian_;
   var lat = radiansToDegrees(2 * Math.atan(Math.exp(latRadians)) -
-      Math.PI / 2);
+                             Math.PI / 2);
   return new google.maps.LatLng(lat, lng);
 };
 
 function midpointLat() {
   var tileFactor = 1 << map.getZoom();
   var midpointFromTop = divHeight / tileFactor / 2;
-  console.log("midpt:" + midpointFromTop);
   return fromPointToLatLng(new google.maps.Point(0, midpointFromTop)).lat();
-}
-
-
-// define image geometry
-var imageWidth = 120;
-var imageHeight = 120;
-
-if (imageWidth > imageHeight) {
-  widthPercent = 100;
-  heightPercent = imageHeight / imageWidth * 100;
-}
-else {
-  heightPercent = 100;
-  widthPercent = imageWidth / imageHeight * 100;
 }
 
 function addMarker(lat, lng) {
@@ -125,27 +91,8 @@ function addIcon(lat, lng, url) {
   }).setMap(map);
 }
 
-function describeBounds() {
-  var bounds = map.getBounds();
-  console.log("bottom left: ");
-  console.log(bounds.getSouthWest().lat() + ", " + bounds.getSouthWest().lng());
-  console.log(bounds.getNorthEast().lat() + ", " + bounds.getNorthEast().lng());
-}
-
 function updateEdge() {
-  //imageWidth = parseInt(document.getElementById("imgWidth").value);
-  //imageHeight = parseInt(document.getElementById("imgHeight").value);
-
-  latbound = heightPercent/2.0;
-  lngbound = widthPercent/2.0;
-
-  latbound = 85.1;
-  lngbound = 180;
-  
   bounds = map.getBounds();
-  console.log("bottom left: ");
-  console.log(bounds.getSouthWest().lat() + ", " + bounds.getSouthWest().lng());
-  console.log(bounds.getNorthEast().lat() + ", " + bounds.getNorthEast().lng());
   
   sw = bounds.getSouthWest();
   ne = bounds.getNorthEast();
@@ -155,45 +102,17 @@ function updateEdge() {
 
   var neLng = ne.lng();
   var neLat = ne.lat();
-    
+  
   if (swLng > neLng) {
     swLng -= 360;
   } 
   width = neLng - swLng;
   
-  // height = ne.lat() - sw.lat();
-
-
-
-  console.log("fromLatLngToPoint(neLat");
-  console.log(fromLatLngToPoint(ne, map));
+  var left = Math.min(-180+(width/2),-0.000001);
+  var right = Math.max(180-(width/2),0.000001);
   
-              
-  console.log("w + h");
-  console.log(width);
-  console.log(height);
-  
-  var left = Math.min(-lngbound+(width/2),-0.000001);
-  var right = Math.max(lngbound-(width/2),0.000001);
-  
-  // var bottom = Math.min(-latbound+(height/2),-0.000001);
-  // var top = Math.max(latbound-(height/2),0.000001);
-
-  // fix lat
-  //  bottom = -extendedLatLimit;
-  //  top = extendedLatLimit;
-  
-  // compute height with pixel/latlng conversions
-  // midpoint between latLimit and bottom of mapBounds
-  // var top = Math.max((latLimit + Math.max(0, swLat)) / 2, 0.000001);
-  // var bottom = Math.min((-latLimit - Math.min(0, neLat)) / 2, -0.000001);
-
   var divCenterLat = fromPointToLatLng(new google.maps.Point(0, divHeight)).lat();
-  // var top = Math.max((latLimit + Math.max(0, divCenterLat)) / 2, 0.000001);
-  // var bottom = Math.min((-latLimit - Math.min(0, divCenterLat)) / 2, -0.000001);
   var currentZoom = map.getZoom();
-  var top = latLimitByZoom[currentZoom];
-  var bottom = -latLimitByZoom[currentZoom];
 
   var top = midpointLat();
   var bottom = -midpointLat();
@@ -204,45 +123,10 @@ function updateEdge() {
 
 }
 
-function printAllowedBounds() {
-  console.log("Allowed bounds: ");
-  var bl = allowedBounds.getSouthWest();
-  var tr = allowedBounds.getNorthEast();
-  console.log("Bottom left: " + bl.lat() + "," + bl.lng());
-  console.log("Top right: " + tr.lat() + "," + tr.lng());
-}
-
-function printBounds(bounds) {
-  console.log("Bounds: ");
-  var bl = bounds.getSouthWest();
-  var tr = bounds.getNorthEast();
-  console.log("Bottom left: " + bl.lat() + "," + bl.lng());
-  console.log("Top right: " + tr.lat() + "," + tr.lng());
-}
-
-function lngWithinBounds() {
-  return (allowedBounds.contains(map.getCenter()));
-}
-
-function latWithinBounds(viewBounds) {
-//  var viewBounds = map.getBounds();
-  return (viewBounds.getNorthEast() < latLimit && viewBounds.getSouthWest() > -latLimit);
-  // return (allowedBounds.contains(map.getCenter()));
-}
-
-function boxIn(mapBounds) {
-//  if (allowedBounds.contains(map.getCenter())) {
-//    return;
-  
-  // check if x (lng) is inside 'allowed bounds' and if y (lat) is inside
-  // (-87, 87 latLimit)
-
-  // var mapBounds = map.getBounds();
-  
-  if (lngWithinBounds()) { // && latWithinBounds(mapBounds)) {
+function boxIn() {
+  if (allowedBounds.contains(map.getCenter())) {
     return;
   } else {
-    // console.log("out of bounds");
     var mapCenter = map.getCenter();
     var X = mapCenter.lng();
     var Y = mapCenter.lat();
@@ -264,7 +148,7 @@ function boxIn(mapBounds) {
     if (Y > AmaxY) {
       Y = AmaxY;
     }
-    // map.setCenter(new google.maps.LatLng(Y, X));
+
     map.panTo(new google.maps.LatLng(Y, X));
   }
 }
@@ -278,7 +162,7 @@ var moonTypeOptions = {
     var bound = Math.pow(2, zoom);
     return 'http://mw1.google.com/mw-planetary/lunar/lunarmaps_v1/clem_bw' +
       
-      '/' + zoom + '/' + normalizedCoord.x + '/' +  
+    '/' + zoom + '/' + normalizedCoord.x + '/' +  
       (bound - normalizedCoord.y - 1) + '.jpg';
   },
   tileSize: new google.maps.Size(256, 256),
@@ -306,7 +190,6 @@ function getNormalizedCoord(coord, zoom) {
     return null;
   }
 
-
   if (x < 0 || x >= tileRange) {
     // ORIGINAL LINE to repeat across x-axis
     // x = (x % tileRange + tileRange) % tileRange;
@@ -319,26 +202,6 @@ function getNormalizedCoord(coord, zoom) {
     x: x,
     y: y
   };
-}
-
-
-google.maps.event.addDomListener(window, 'load', initialize);
-
-
-// reformulate projection latlng limits to +/-100
-// https://developers.google.com/maps/documentation/javascript/examples/map-projection-simple
-
-function SquareProjection() {
-  this.worldOrigin_ = new google.maps.Point(0, 0);
-
-  // ??? unsure
-  this.worldCoordinatePerLonDegree_ = 10;
-
-  // from -50 to +50
-  this.worldCoordinateLatRange = 100;
-
-  SquareProjection.prototype.fromLatLngToPoint = function(latLng) {
-  }
 }
 
 function initialize() {
@@ -362,13 +225,11 @@ function initialize() {
   
   google.maps.event.addListener(map, 'zoom_changed', function() {
     updateEdge();
-    // boxIn();
+    boxIn();
   });
 
-  //  google.maps.event.addListener(map, 'center_changed', function() {
   google.maps.event.addListener(map, 'center_changed', function() {
-    var mapBounds = map.getBounds();
-    boxIn(mapBounds);
+    boxIn();
   });
 
   google.maps.event.addListener(map, 'click', function(e) {
@@ -392,3 +253,5 @@ function initialize() {
 
   addIcon(60.1, -179, "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=Y|00FF00|000000");
 }
+
+google.maps.event.addDomListener(window, 'load', initialize);
