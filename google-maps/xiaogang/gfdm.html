@@ -1,0 +1,2091 @@
+
+<!DOCTYPE html> 
+<html style="height:100%"> 
+<head> 
+<title>Global Flood and Drought Monitor</title>
+<link rel="icon" type="image/ico" href="icons/LAFDM_icon.ico">
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" /> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/> 
+<link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="css/custom.css">
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css">
+<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+<script type="text/javascript" src="jsscripts/bootstrap.min.js"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="jsscripts/MiscFunctions.js"></script>
+<script type="text/javascript" src="jsscripts/VarDeclaration.js"></script>
+<script type="text/javascript" src="jsscripts/AnimationPrep.js"></script>
+<script type="text/javascript" src="jsscripts/ImageOverlay.js"></script>
+<script type="text/javascript" src="jsscripts/MainFunctions.js"></script>
+<script type="text/javascript" src="jsscripts/timestep.js"></script>
+<script type="text/javascript" src="jsscripts/polygonEdit_packed.js"></script>
+<script type="text/javascript" src="jsscripts/data_extraction.js"></script>
+<script src="jsscripts/highcharts.js" type="text/javascript"></script>
+<script src="jsscripts/highcharts-more.js" type="text/javascript"></script>
+<script src="jsscripts/exporting.js" type="text/javascript"></script>
+<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+<script type="text/javascript">
+  var timeoutid;
+  var general_info = {"res":0.25,"minlat":-85.05,"minlon":-179.75,"nlat":682.5,"nlon":1441,"izoom":0,"centerlat":0,"centerlon":-45,"minprec":0,"minso":2,"base":"http:\/\/stream.princeton.edu:9090\/dods\/GFDM"};
+  general_info.maxlon = general_info.minlon + general_info.res*(general_info.nlon-1);
+  general_info.maxlat = general_info.minlat + general_info.res*(general_info.nlat-1);
+  var info_box_strings = {"prec":"Daily total surface precipitation","tmax":"Daily maximum temperature measured at 2 meters above the surface","tmin":"Daily minimum temperature measured at 2 meters above the surface","wind":"Daily mean wind speed measured at 2 meters above the surface","vc1":"Relative soil moisture of the top layer (0 - 10 cm) calculated from the land surface model output.","vc2":"Relative soil moisture of the second layer (10 - ~100cm) calculated from the land surface model output. ","evap":"The sum of the land surface model\u2019s soil evaporation, canopy interception and plant transpiration.","runoff":"Excess water from rain, snowmelt or other sources that does not infiltrate due to soil saturation or high intensity but instead flows overland.","baseflow":"Portion of streamflow that comes from the sum of deep subsurface flow and delayed shallow subsurface flow.","flw":"Daily basin discharge calculated by inputting the baseflow and surface runoff from the VIC land surface model at each grid cell into the Velocity Driven Spatially Continuous routing model","spi1":"The 1 month standard precipitation index is the number of standard deviations that observed 1-month cumulative precipitation deviates from the climatological average (McKee, 1993).\n","spi3":"The 3 month standard precipitation index is the number of standard deviations that observed 3-month cumulative precipitation deviates from the climatological average (McKee, 1993).\n","spi6":"The 6 month standard precipitation index is the number of standard deviations that observed 6-month cumulative precipitation deviates from the climatological average (McKee, 1993).","spi12":"The 12 month standard precipitation index is the number of standard deviations that observed 12-month cumulative precipitation deviates from the climatological average (McKee, 1993).","vcpct":"A measure of the severity of drought in soil moisture; low values indicate drought conditions","pct30day":"A measure of the severity of agricultural drought; low values indicate drought conditions. The 30-day moving average of NDVI is compared to the historical record of NDVI via the empirical cumulative distribution function to determine the percentile.","flw_pct":"A measure of the severity of hydrological drought; low values indicate drought conditions. Percentile of the simulated discharge at each stream gauge with respect to the historical simulations (1950 - 2008)","r_net":"Difference between the incoming and outgoing components of radiation calculated using the VIC land surface model.","net_long":"Difference between the incoming and outgoing components of longwave radiation calculated using the VIC land surface model.","net_short":"Difference between the incoming and outgoing components of shortwave radiation calculated using the VIC land surface model.\n","ndvi30":"The Normalized Difference Vegetation Index (NDVI) is measure of live green vegetation (0-1)","t2m":"Average temperature at 2 meters above the surface.","t2ano":"Departure from the climatological value of average temperature at 2 meters above the surface."};
+  var data_timesteps = [], data_idates = [], data_fdates = [], data_titles = [];
+  data_timesteps["prec--3B42RT_BC"] = "DMY";
+data_idates["prec--3B42RT_BC"] = "2000/03/01";
+data_fdates["prec--3B42RT_BC"] = "2013/10/08";
+data_titles["prec--3B42RT_BC"] = "Satellite Precipitation (3B42RT)";
+data_timesteps["prec--PGF"] = "DMY";
+data_idates["prec--PGF"] = "1948/01/01";
+data_fdates["prec--PGF"] = "2008/12/31";
+data_titles["prec--PGF"] = "Princeton Global Forcing Dataset";
+data_timesteps["tmax--PGF"] = "DMY";
+data_idates["tmax--PGF"] = "1948/01/01";
+data_fdates["tmax--PGF"] = "2008/12/31";
+data_titles["tmax--PGF"] = "Princeton Global Forcing";
+data_timesteps["tmax--GFS_ANALYSIS_BC"] = "DMY";
+data_idates["tmax--GFS_ANALYSIS_BC"] = "2008/01/01";
+data_fdates["tmax--GFS_ANALYSIS_BC"] = "2013/10/08";
+data_titles["tmax--GFS_ANALYSIS_BC"] = "Global Forecasting System Analysis";
+data_timesteps["tmin--PGF"] = "DMY";
+data_idates["tmin--PGF"] = "1948/01/01";
+data_fdates["tmin--PGF"] = "2008/12/31";
+data_titles["tmin--PGF"] = "Princeton Global Forcing";
+data_timesteps["tmin--GFS_ANALYSIS_BC"] = "DMY";
+data_idates["tmin--GFS_ANALYSIS_BC"] = "2008/01/01";
+data_fdates["tmin--GFS_ANALYSIS_BC"] = "2013/10/08";
+data_titles["tmin--GFS_ANALYSIS_BC"] = "Global Forecasting System Analysis";
+data_timesteps["wind--PGF"] = "DMY";
+data_idates["wind--PGF"] = "1948/01/01";
+data_fdates["wind--PGF"] = "2008/12/31";
+data_titles["wind--PGF"] = "Princeton Global Forcing";
+data_timesteps["wind--GFS_ANALYSIS_BC"] = "DMY";
+data_idates["wind--GFS_ANALYSIS_BC"] = "2008/01/01";
+data_fdates["wind--GFS_ANALYSIS_BC"] = "2013/10/08";
+data_titles["wind--GFS_ANALYSIS_BC"] = "Global Forecasting System Analysis";
+data_timesteps["vc1--VIC_DERIVED"] = "DMY";
+data_idates["vc1--VIC_DERIVED"] = "1950/01/01";
+data_fdates["vc1--VIC_DERIVED"] = "2013/10/08";
+data_titles["vc1--VIC_DERIVED"] = "Derived Hydrologic Products (VIC)";
+data_timesteps["vc2--VIC_DERIVED"] = "DMY";
+data_idates["vc2--VIC_DERIVED"] = "1950/01/01";
+data_fdates["vc2--VIC_DERIVED"] = "2013/10/08";
+data_titles["vc2--VIC_DERIVED"] = "Derived Hydrologic Products (VIC)";
+data_timesteps["evap--VIC_PGF"] = "DMY";
+data_idates["evap--VIC_PGF"] = "1948/01/01";
+data_fdates["evap--VIC_PGF"] = "2008/12/31";
+data_titles["evap--VIC_PGF"] = "VIC hydrologic model (PGF)";
+data_timesteps["evap--VIC_3B42RT"] = "DMY";
+data_idates["evap--VIC_3B42RT"] = "2003/01/01";
+data_fdates["evap--VIC_3B42RT"] = "2013/10/08";
+data_titles["evap--VIC_3B42RT"] = "VIC hydrologic model (3B42RT)";
+data_timesteps["runoff--VIC_PGF"] = "DMY";
+data_idates["runoff--VIC_PGF"] = "1948/01/01";
+data_fdates["runoff--VIC_PGF"] = "2008/12/31";
+data_titles["runoff--VIC_PGF"] = "VIC hydrologic model (PGF)";
+data_timesteps["runoff--VIC_3B42RT"] = "DMY";
+data_idates["runoff--VIC_3B42RT"] = "2003/01/01";
+data_fdates["runoff--VIC_3B42RT"] = "2013/10/08";
+data_titles["runoff--VIC_3B42RT"] = "VIC hydrologic model (3B42RT)";
+data_timesteps["baseflow--VIC_PGF"] = "DMY";
+data_idates["baseflow--VIC_PGF"] = "1948/01/01";
+data_fdates["baseflow--VIC_PGF"] = "2008/12/31";
+data_titles["baseflow--VIC_PGF"] = "VIC hydrologic model (PGF)";
+data_timesteps["baseflow--VIC_3B42RT"] = "DMY";
+data_idates["baseflow--VIC_3B42RT"] = "2003/01/01";
+data_fdates["baseflow--VIC_3B42RT"] = "2013/10/08";
+data_titles["baseflow--VIC_3B42RT"] = "VIC hydrologic model (3B42RT)";
+data_timesteps["flw--ROUTING_VIC_PGF"] = "DMY";
+data_idates["flw--ROUTING_VIC_PGF"] = "1948/01/01";
+data_fdates["flw--ROUTING_VIC_PGF"] = "2008/12/31";
+data_titles["flw--ROUTING_VIC_PGF"] = "VIC hydrologic model (PGF)";
+data_timesteps["flw--ROUTING_VIC_3B42RT"] = "DMY";
+data_idates["flw--ROUTING_VIC_3B42RT"] = "2003/01/01";
+data_fdates["flw--ROUTING_VIC_3B42RT"] = "2013/10/08";
+data_titles["flw--ROUTING_VIC_3B42RT"] = "VIC hydrologic model (3B42RT)";
+data_timesteps["spi1--SPI"] = "DMY";
+data_idates["spi1--SPI"] = "1950/01/01";
+data_fdates["spi1--SPI"] = "2013/10/08";
+data_titles["spi1--SPI"] = "Derived Meteorology";
+data_timesteps["spi3--SPI"] = "DMY";
+data_idates["spi3--SPI"] = "1950/01/01";
+data_fdates["spi3--SPI"] = "2013/10/08";
+data_titles["spi3--SPI"] = "Derived Meteorology";
+data_timesteps["spi6--SPI"] = "DMY";
+data_idates["spi6--SPI"] = "1950/01/01";
+data_fdates["spi6--SPI"] = "2013/10/08";
+data_titles["spi6--SPI"] = "Derived Meteorology";
+data_timesteps["spi12--SPI"] = "DMY";
+data_idates["spi12--SPI"] = "1950/01/01";
+data_fdates["spi12--SPI"] = "2013/10/08";
+data_titles["spi12--SPI"] = "Derived Meteorology";
+data_timesteps["vcpct--VIC_DERIVED"] = "DMY";
+data_idates["vcpct--VIC_DERIVED"] = "1950/01/01";
+data_fdates["vcpct--VIC_DERIVED"] = "2013/10/08";
+data_titles["vcpct--VIC_DERIVED"] = "Derived Hydrology";
+data_timesteps["pct30day--MOD09_NDVI_MA_DERIVED"] = "DMY";
+data_idates["pct30day--MOD09_NDVI_MA_DERIVED"] = "2003/01/01";
+data_fdates["pct30day--MOD09_NDVI_MA_DERIVED"] = "2013/09/27";
+data_titles["pct30day--MOD09_NDVI_MA_DERIVED"] = "MODIS";
+data_timesteps["flw_pct--ROUTING_VIC_DERIVED"] = "DMY";
+data_idates["flw_pct--ROUTING_VIC_DERIVED"] = "1950/01/01";
+data_fdates["flw_pct--ROUTING_VIC_DERIVED"] = "2013/10/08";
+data_titles["flw_pct--ROUTING_VIC_DERIVED"] = "VIC hydrologic model";
+data_timesteps["r_net--VIC_PGF"] = "DMY";
+data_idates["r_net--VIC_PGF"] = "1948/01/01";
+data_fdates["r_net--VIC_PGF"] = "2008/12/31";
+data_titles["r_net--VIC_PGF"] = "VIC hydrologic model (PGF)";
+data_timesteps["r_net--VIC_3B42RT"] = "DMY";
+data_idates["r_net--VIC_3B42RT"] = "2003/01/01";
+data_fdates["r_net--VIC_3B42RT"] = "2013/10/08";
+data_titles["r_net--VIC_3B42RT"] = "VIC hydrologic model (3B42RT)";
+data_timesteps["net_long--VIC_PGF"] = "DMY";
+data_idates["net_long--VIC_PGF"] = "1948/01/01";
+data_fdates["net_long--VIC_PGF"] = "2008/12/31";
+data_titles["net_long--VIC_PGF"] = "VIC hydrologic model (PGF)";
+data_timesteps["net_long--VIC_3B42RT"] = "DMY";
+data_idates["net_long--VIC_3B42RT"] = "2003/01/01";
+data_fdates["net_long--VIC_3B42RT"] = "2013/10/08";
+data_titles["net_long--VIC_3B42RT"] = "VIC hydrologic model (3B42RT)";
+data_timesteps["net_short--VIC_PGF"] = "DMY";
+data_idates["net_short--VIC_PGF"] = "1948/01/01";
+data_fdates["net_short--VIC_PGF"] = "2008/12/31";
+data_titles["net_short--VIC_PGF"] = "VIC hydrologic model (PGF)";
+data_timesteps["net_short--VIC_3B42RT"] = "DMY";
+data_idates["net_short--VIC_3B42RT"] = "2003/01/01";
+data_fdates["net_short--VIC_3B42RT"] = "2013/10/08";
+data_titles["net_short--VIC_3B42RT"] = "VIC hydrologic model (3B42RT)";
+data_timesteps["ndvi30--MOD09_NDVI_MA"] = "DMY";
+data_idates["ndvi30--MOD09_NDVI_MA"] = "2003/01/01";
+data_fdates["ndvi30--MOD09_NDVI_MA"] = "2013/09/27";
+data_titles["ndvi30--MOD09_NDVI_MA"] = "MODIS";
+data_timesteps["spi1--CMC1-CanCM3"] = "M";
+data_idates["spi1--CMC1-CanCM3"] = "2013/09/01";
+data_fdates["spi1--CMC1-CanCM3"] = "2013/09/01";
+data_titles["spi1--CMC1-CanCM3"] = "CMC1-CanCM3";
+data_timesteps["spi1--GFDL-CM2p1-aer04"] = "M";
+data_idates["spi1--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_fdates["spi1--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_titles["spi1--GFDL-CM2p1-aer04"] = "GFDL-CM2p1-aer04";
+data_timesteps["spi1--COLA-RSMAS-CCSM3"] = "M";
+data_idates["spi1--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_fdates["spi1--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_titles["spi1--COLA-RSMAS-CCSM3"] = "COLA-RSMAS-CCSM3";
+data_timesteps["spi1--NASA-GMAO-062012"] = "M";
+data_idates["spi1--NASA-GMAO-062012"] = "2013/09/01";
+data_fdates["spi1--NASA-GMAO-062012"] = "2013/09/01";
+data_titles["spi1--NASA-GMAO-062012"] = "NASA-GMAO-062012";
+data_timesteps["spi1--CMC2-CanCM4"] = "M";
+data_idates["spi1--CMC2-CanCM4"] = "2013/09/01";
+data_fdates["spi1--CMC2-CanCM4"] = "2013/09/01";
+data_titles["spi1--CMC2-CanCM4"] = "CMC2-CanCM4";
+data_timesteps["spi1--NCEP-CFSv2"] = "M";
+data_idates["spi1--NCEP-CFSv2"] = "2013/09/01";
+data_fdates["spi1--NCEP-CFSv2"] = "2013/09/01";
+data_titles["spi1--NCEP-CFSv2"] = "NCEP-CFSv2";
+data_timesteps["spi1--MultiModel"] = "M";
+data_idates["spi1--MultiModel"] = "2013/09/01";
+data_fdates["spi1--MultiModel"] = "2013/09/01";
+data_titles["spi1--MultiModel"] = "Multi Model Mean";
+data_timesteps["spi1--GFS_7DAY_FORECAST"] = "D";
+data_idates["spi1--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["spi1--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["spi1--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["spi3--CMC1-CanCM3"] = "M";
+data_idates["spi3--CMC1-CanCM3"] = "2013/09/01";
+data_fdates["spi3--CMC1-CanCM3"] = "2013/09/01";
+data_titles["spi3--CMC1-CanCM3"] = "CMC1-CanCM3";
+data_timesteps["spi3--GFDL-CM2p1-aer04"] = "M";
+data_idates["spi3--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_fdates["spi3--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_titles["spi3--GFDL-CM2p1-aer04"] = "GFDL-CM2p1-aer04";
+data_timesteps["spi3--COLA-RSMAS-CCSM3"] = "M";
+data_idates["spi3--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_fdates["spi3--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_titles["spi3--COLA-RSMAS-CCSM3"] = "COLA-RSMAS-CCSM3";
+data_timesteps["spi3--NASA-GMAO-062012"] = "M";
+data_idates["spi3--NASA-GMAO-062012"] = "2013/09/01";
+data_fdates["spi3--NASA-GMAO-062012"] = "2013/09/01";
+data_titles["spi3--NASA-GMAO-062012"] = "NASA-GMAO-062012";
+data_timesteps["spi3--CMC2-CanCM4"] = "M";
+data_idates["spi3--CMC2-CanCM4"] = "2013/09/01";
+data_fdates["spi3--CMC2-CanCM4"] = "2013/09/01";
+data_titles["spi3--CMC2-CanCM4"] = "CMC2-CanCM4";
+data_timesteps["spi3--NCEP-CFSv2"] = "M";
+data_idates["spi3--NCEP-CFSv2"] = "2013/09/01";
+data_fdates["spi3--NCEP-CFSv2"] = "2013/09/01";
+data_titles["spi3--NCEP-CFSv2"] = "NCEP-CFSv2";
+data_timesteps["spi3--MultiModel"] = "M";
+data_idates["spi3--MultiModel"] = "2013/09/01";
+data_fdates["spi3--MultiModel"] = "2013/09/01";
+data_titles["spi3--MultiModel"] = "Multi Model Mean";
+data_timesteps["spi3--GFS_7DAY_FORECAST"] = "D";
+data_idates["spi3--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["spi3--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["spi3--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["spi6--CMC1-CanCM3"] = "M";
+data_idates["spi6--CMC1-CanCM3"] = "2013/09/01";
+data_fdates["spi6--CMC1-CanCM3"] = "2013/09/01";
+data_titles["spi6--CMC1-CanCM3"] = "CMC1-CanCM3";
+data_timesteps["spi6--GFDL-CM2p1-aer04"] = "M";
+data_idates["spi6--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_fdates["spi6--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_titles["spi6--GFDL-CM2p1-aer04"] = "GFDL-CM2p1-aer04";
+data_timesteps["spi6--COLA-RSMAS-CCSM3"] = "M";
+data_idates["spi6--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_fdates["spi6--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_titles["spi6--COLA-RSMAS-CCSM3"] = "COLA-RSMAS-CCSM3";
+data_timesteps["spi6--NASA-GMAO-062012"] = "M";
+data_idates["spi6--NASA-GMAO-062012"] = "2013/09/01";
+data_fdates["spi6--NASA-GMAO-062012"] = "2013/09/01";
+data_titles["spi6--NASA-GMAO-062012"] = "NASA-GMAO-062012";
+data_timesteps["spi6--CMC2-CanCM4"] = "M";
+data_idates["spi6--CMC2-CanCM4"] = "2013/09/01";
+data_fdates["spi6--CMC2-CanCM4"] = "2013/09/01";
+data_titles["spi6--CMC2-CanCM4"] = "CMC2-CanCM4";
+data_timesteps["spi6--NCEP-CFSv2"] = "M";
+data_idates["spi6--NCEP-CFSv2"] = "2013/09/01";
+data_fdates["spi6--NCEP-CFSv2"] = "2013/09/01";
+data_titles["spi6--NCEP-CFSv2"] = "NCEP-CFSv2";
+data_timesteps["spi6--MultiModel"] = "M";
+data_idates["spi6--MultiModel"] = "2013/09/01";
+data_fdates["spi6--MultiModel"] = "2013/09/01";
+data_titles["spi6--MultiModel"] = "Multi Model Mean";
+data_timesteps["spi6--GFS_7DAY_FORECAST"] = "D";
+data_idates["spi6--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["spi6--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["spi6--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["spi12--CMC1-CanCM3"] = "M";
+data_idates["spi12--CMC1-CanCM3"] = "2013/09/01";
+data_fdates["spi12--CMC1-CanCM3"] = "2013/09/01";
+data_titles["spi12--CMC1-CanCM3"] = "CMC1-CanCM3";
+data_timesteps["spi12--GFDL-CM2p1-aer04"] = "M";
+data_idates["spi12--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_fdates["spi12--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_titles["spi12--GFDL-CM2p1-aer04"] = "GFDL-CM2p1-aer04";
+data_timesteps["spi12--COLA-RSMAS-CCSM3"] = "M";
+data_idates["spi12--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_fdates["spi12--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_titles["spi12--COLA-RSMAS-CCSM3"] = "COLA-RSMAS-CCSM3";
+data_timesteps["spi12--NASA-GMAO-062012"] = "M";
+data_idates["spi12--NASA-GMAO-062012"] = "2013/09/01";
+data_fdates["spi12--NASA-GMAO-062012"] = "2013/09/01";
+data_titles["spi12--NASA-GMAO-062012"] = "NASA-GMAO-062012";
+data_timesteps["spi12--CMC2-CanCM4"] = "M";
+data_idates["spi12--CMC2-CanCM4"] = "2013/09/01";
+data_fdates["spi12--CMC2-CanCM4"] = "2013/09/01";
+data_titles["spi12--CMC2-CanCM4"] = "CMC2-CanCM4";
+data_timesteps["spi12--NCEP-CFSv2"] = "M";
+data_idates["spi12--NCEP-CFSv2"] = "2013/09/01";
+data_fdates["spi12--NCEP-CFSv2"] = "2013/09/01";
+data_titles["spi12--NCEP-CFSv2"] = "NCEP-CFSv2";
+data_timesteps["spi12--MultiModel"] = "M";
+data_idates["spi12--MultiModel"] = "2013/09/01";
+data_fdates["spi12--MultiModel"] = "2013/09/01";
+data_titles["spi12--MultiModel"] = "Multi Model Mean";
+data_timesteps["spi12--GFS_7DAY_FORECAST"] = "D";
+data_idates["spi12--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["spi12--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["spi12--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["prec--CMC1-CanCM3"] = "M";
+data_idates["prec--CMC1-CanCM3"] = "2013/09/01";
+data_fdates["prec--CMC1-CanCM3"] = "2013/09/01";
+data_titles["prec--CMC1-CanCM3"] = "CMC1-CanCM3";
+data_timesteps["prec--GFDL-CM2p1-aer04"] = "M";
+data_idates["prec--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_fdates["prec--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_titles["prec--GFDL-CM2p1-aer04"] = "GFDL-CM2p1-aer04";
+data_timesteps["prec--COLA-RSMAS-CCSM3"] = "M";
+data_idates["prec--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_fdates["prec--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_titles["prec--COLA-RSMAS-CCSM3"] = "COLA-RSMAS-CCSM3";
+data_timesteps["prec--NASA-GMAO-062012"] = "M";
+data_idates["prec--NASA-GMAO-062012"] = "2013/09/01";
+data_fdates["prec--NASA-GMAO-062012"] = "2013/09/01";
+data_titles["prec--NASA-GMAO-062012"] = "NASA-GMAO-062012";
+data_timesteps["prec--CMC2-CanCM4"] = "M";
+data_idates["prec--CMC2-CanCM4"] = "2013/09/01";
+data_fdates["prec--CMC2-CanCM4"] = "2013/09/01";
+data_titles["prec--CMC2-CanCM4"] = "CMC2-CanCM4";
+data_timesteps["prec--NCEP-CFSv2"] = "M";
+data_idates["prec--NCEP-CFSv2"] = "2013/09/01";
+data_fdates["prec--NCEP-CFSv2"] = "2013/09/01";
+data_titles["prec--NCEP-CFSv2"] = "NCEP-CFSv2";
+data_timesteps["prec--MultiModel"] = "M";
+data_idates["prec--MultiModel"] = "2013/09/01";
+data_fdates["prec--MultiModel"] = "2013/09/01";
+data_titles["prec--MultiModel"] = "Multi Model Mean";
+data_timesteps["prec--GFS_7DAY_FORECAST"] = "D";
+data_idates["prec--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["prec--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["prec--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["t2m--CMC1-CanCM3"] = "M";
+data_idates["t2m--CMC1-CanCM3"] = "2013/09/01";
+data_fdates["t2m--CMC1-CanCM3"] = "2013/09/01";
+data_titles["t2m--CMC1-CanCM3"] = "CMC1-CanCM3";
+data_timesteps["t2m--GFDL-CM2p1-aer04"] = "M";
+data_idates["t2m--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_fdates["t2m--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_titles["t2m--GFDL-CM2p1-aer04"] = "GFDL-CM2p1-aer04";
+data_timesteps["t2m--COLA-RSMAS-CCSM3"] = "M";
+data_idates["t2m--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_fdates["t2m--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_titles["t2m--COLA-RSMAS-CCSM3"] = "COLA-RSMAS-CCSM3";
+data_timesteps["t2m--NASA-GMAO-062012"] = "M";
+data_idates["t2m--NASA-GMAO-062012"] = "2013/09/01";
+data_fdates["t2m--NASA-GMAO-062012"] = "2013/09/01";
+data_titles["t2m--NASA-GMAO-062012"] = "NASA-GMAO-062012";
+data_timesteps["t2m--CMC2-CanCM4"] = "M";
+data_idates["t2m--CMC2-CanCM4"] = "2013/09/01";
+data_fdates["t2m--CMC2-CanCM4"] = "2013/09/01";
+data_titles["t2m--CMC2-CanCM4"] = "CMC2-CanCM4";
+data_timesteps["t2m--NCEP-CFSv2"] = "M";
+data_idates["t2m--NCEP-CFSv2"] = "2013/09/01";
+data_fdates["t2m--NCEP-CFSv2"] = "2013/09/01";
+data_titles["t2m--NCEP-CFSv2"] = "NCEP-CFSv2";
+data_timesteps["t2m--MultiModel"] = "M";
+data_idates["t2m--MultiModel"] = "2013/09/01";
+data_fdates["t2m--MultiModel"] = "2013/09/01";
+data_titles["t2m--MultiModel"] = "Multi Model Mean";
+data_timesteps["t2ano--CMC1-CanCM3"] = "M";
+data_idates["t2ano--CMC1-CanCM3"] = "2013/09/01";
+data_fdates["t2ano--CMC1-CanCM3"] = "2013/09/01";
+data_titles["t2ano--CMC1-CanCM3"] = "CMC1-CanCM3";
+data_timesteps["t2ano--GFDL-CM2p1-aer04"] = "M";
+data_idates["t2ano--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_fdates["t2ano--GFDL-CM2p1-aer04"] = "2013/09/01";
+data_titles["t2ano--GFDL-CM2p1-aer04"] = "GFDL-CM2p1-aer04";
+data_timesteps["t2ano--COLA-RSMAS-CCSM3"] = "M";
+data_idates["t2ano--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_fdates["t2ano--COLA-RSMAS-CCSM3"] = "2013/09/01";
+data_titles["t2ano--COLA-RSMAS-CCSM3"] = "COLA-RSMAS-CCSM3";
+data_timesteps["t2ano--NASA-GMAO-062012"] = "M";
+data_idates["t2ano--NASA-GMAO-062012"] = "2013/09/01";
+data_fdates["t2ano--NASA-GMAO-062012"] = "2013/09/01";
+data_titles["t2ano--NASA-GMAO-062012"] = "NASA-GMAO-062012";
+data_timesteps["t2ano--CMC2-CanCM4"] = "M";
+data_idates["t2ano--CMC2-CanCM4"] = "2013/09/01";
+data_fdates["t2ano--CMC2-CanCM4"] = "2013/09/01";
+data_titles["t2ano--CMC2-CanCM4"] = "CMC2-CanCM4";
+data_timesteps["t2ano--NCEP-CFSv2"] = "M";
+data_idates["t2ano--NCEP-CFSv2"] = "2013/09/01";
+data_fdates["t2ano--NCEP-CFSv2"] = "2013/09/01";
+data_titles["t2ano--NCEP-CFSv2"] = "NCEP-CFSv2";
+data_timesteps["t2ano--MultiModel"] = "M";
+data_idates["t2ano--MultiModel"] = "2013/09/01";
+data_fdates["t2ano--MultiModel"] = "2013/09/01";
+data_titles["t2ano--MultiModel"] = "Multi Model Mean";
+data_timesteps["tmax--GFS_7DAY_FORECAST"] = "D";
+data_idates["tmax--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["tmax--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["tmax--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["tmin--GFS_7DAY_FORECAST"] = "D";
+data_idates["tmin--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["tmin--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["tmin--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["wind--GFS_7DAY_FORECAST"] = "D";
+data_idates["wind--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["wind--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["wind--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["vc1--GFS_7DAY_FORECAST"] = "D";
+data_idates["vc1--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["vc1--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["vc1--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["vc2--GFS_7DAY_FORECAST"] = "D";
+data_idates["vc2--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["vc2--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["vc2--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["evap--GFS_7DAY_FORECAST"] = "D";
+data_idates["evap--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["evap--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["evap--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["runoff--GFS_7DAY_FORECAST"] = "D";
+data_idates["runoff--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["runoff--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["runoff--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["r_net--GFS_7DAY_FORECAST"] = "D";
+data_idates["r_net--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["r_net--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["r_net--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["net_long--GFS_7DAY_FORECAST"] = "D";
+data_idates["net_long--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["net_long--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["net_long--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["net_short--GFS_7DAY_FORECAST"] = "D";
+data_idates["net_short--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["net_short--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["net_short--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["baseflow--GFS_7DAY_FORECAST"] = "D";
+data_idates["baseflow--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["baseflow--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["baseflow--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["vcpct--GFS_7DAY_FORECAST"] = "D";
+data_idates["vcpct--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["vcpct--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["vcpct--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["flw_pct--GFS_7DAY_FORECAST"] = "D";
+data_idates["flw_pct--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["flw_pct--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["flw_pct--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+data_timesteps["flw--GFS_7DAY_FORECAST"] = "D";
+data_idates["flw--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_fdates["flw--GFS_7DAY_FORECAST"] = "2013/10/08";
+data_titles["flw--GFS_7DAY_FORECAST"] = "GFS 7-day forecast";
+
+  var DEFAULT_ANIMATION_DATASET = "vcpct--VIC_DERIVED";
+  var TRANSLATE = {"Indices":"Indices","SPI (1 month)":"SPI (1 month)","SPI (3 months)":"SPI (3 months)","SPI (6 months)":"SPI (6 months)","SPI (12 months)":"SPI (12 months)","Soil Moisture Index (%)":"Soil Moisture Index (%)","Vegetation Index (%)":"Vegetation Index (%)","Streamflow Index (%)":"Streamflow Index (%)","Percentile (%)":"Percentile (%)","Temperature Anomaly (C)":"Temperature Anomaly (C)","mm\/day":"mm\/day","Precipitation (mm\/day)":"Precipitation (mm\/day)","Evaporation (mm\/day)":"Evaporation (mm\/day)","Runoff (mm\/day)":"Runoff (mm\/day)","Baseflow (mm\/day)":"Baseflow (mm\/day)","Water Balance":"Water Balance","Meteorology":"Meteorology","Daily Maximum Temperature (K)":"Daily Maximum Temperature (K)","Daily Minimum Temperature (K)":"Daily Minimum Temperature (K)","Daily Average Wind Speed (m\/s)":"Daily Average Wind Speed (m\/s)","Surface Fluxes":"Surface Fluxes","Net Shortwave (W\/m2)":"Net Shortwave (W\/m2)","Net Longwave (W\/m2)":"Net Longwave (W\/m2)","Net Radiation (W\/m2)":"Net Radiation (W\/m2)","Streamflow (m3\/s)":"Streamflow (m3\/s)","Streamflow":"Streamflow","Soil Moisture":"Soil Moisture","Relative Soil Moisture (%)":"Relative Soil Moisture (%)","Soil Moisture (%) - Layer 1":"Soil Moisture (%) - Layer 1","Soil Moisture (%) - Layer 2":"Soil Moisture (%) - Layer 2","Soil Moisture (Layer 1)":"Soil Moisture (Layer 1)","Soil Moisture (Layer 2)":"Soil Moisture (Layer 2)","Vegetation":"Vegetation","Error: ":"Error: "," is only available from ":" is only available from "," to ":" to ","Your request has been submitted. You will receive an email when the data is ready to be downloaded.":"Your request has been submitted. You will receive an email when the data is ready to be downloaded.","Point out of bounds. Please choose a point inside the domain.":"Point out of bounds. Please choose a point inside the domain.","Error: The initial date must be after ":"Error: The initial date must be after ","Error: The final date must be before ":"Error: The final date must be before ","Error: The final date must be after the initial date.":"Error: The final date must be after the initial date.","Error: The selected domain is completely outside of the monitor's coverage. Please adjust your selection.":"Error: The selected domain is completely outside of the monitor's coverage. Please adjust your selection.","Warning: The selected domain is partially outside of the monitor's coverage. Your spatial request will be cropped.":"Warning: The selected domain is partially outside of the monitor's coverage. Your spatial request will be cropped.","Error: The final date must be on or after the initial date.":"Error: The final date must be on or after the initial date.","Error: The latitude and\/or longitude have not been defined.":"Error: The latitude and\/or longitude have not been defined."};
+
+  // Define JS variables from PHP arrays
+  var year_initial = 2013;
+var year_initial_orig = 2013;
+var month_initial = 10;
+var month_initial_orig = 10;
+var day_initial = 8;
+var day_initial_orig = 8;
+var year_final = 2013;
+var year_final_orig = 2013;
+var month_final = 10;
+var month_final_orig = 10;
+var day_final = 8;
+var day_final_orig = 8;
+
+  function initialize() 
+  {
+    // Echo user settings from PHP
+    var dim = {"res":0.25,"minlat":-85.05,"minlon":-179.75,"nlat":682.5,"nlon":1441,"izoom":0,"centerlat":0,"centerlon":-45,"minprec":0,"minso":2,"base":"http:\/\/stream.princeton.edu:9090\/dods\/GFDM"};
+    //var swBound = new google.maps.LatLng(dim.minlat, dim.minlon);
+    //var neBound = new google.maps.LatLng(dim.minlat + (dim.nlat-1)*dim.res, dim.minlon + (dim.nlon-1)*dim.res);
+    var swBound = new google.maps.LatLng(dim.minlat, dim.minlon);
+    var neBound = new google.maps.LatLng(dim.minlat + (dim.nlat-1)*dim.res - dim.res, dim.minlon + (dim.nlon-1)*dim.res - dim.res);
+    //var mapCenter = new google.maps.LatLng(dim.minlat + dim.nlat*dim.res/2.5, dim.minlon + dim.nlon*dim.res/2);
+    var mapCenter = new google.maps.LatLng(dim.centerlat, dim.centerlon);
+   
+    var allowedBounds = new google.maps.LatLngBounds(
+     new google.maps.LatLng(-85, -179), 
+     new google.maps.LatLng(85, 0));
+
+ 
+    /*var styleArray = [
+     {featureType: 'administrative.country',stylers: [{ visibility: 'on' }]},
+     {elementType: 'all',styles: [{visibility:'off'}]}
+    ];*/
+    //var styleArray = [{stylers: [{ visibility:'on'}]}];
+    var styleArray = [{
+     featureType: "administrative.country",
+     elementType: "labels",
+     stylers: [
+      { visibility: "simplified" }
+     ]
+    }]
+
+    var myOptions = {
+     minZoom:2,
+     //maxZoom:8,
+     styles:styleArray,
+     zoom:dim.izoom,
+     center:mapCenter,
+     panControl:false,
+     zoomControl:true,
+     zoomControlOptions:{
+      style:google.maps.ZoomControlStyle.DEFAULT,
+      position: google.maps.ControlPosition.LEFT_TOP
+     },
+     scaleControl:false,
+     streetViewControl:false,
+     mapTypeControl:true,
+     mapTypeControlOptions:{
+      style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+      position: google.maps.ControlPosition.TOP_LEFT
+     },
+     mapTypeId:google.maps.MapTypeId.TERRAIN
+    };
+
+    //Insert the map canvas into html
+    map_array[0] = new google.maps.Map(document.getElementById("map_canvas_1"), myOptions);
+    bounds = new google.maps.LatLngBounds(swBound, neBound);
+    // map_array[0].fitBounds(bounds);
+
+    var lastValidCenter = map_array[0].getCenter();
+
+//    google.maps.event.addListener(map_array[0], 'center_changed', function() {
+//        if (allowedBounds.contains(map_array[0].getCenter())) {
+//            // still within valid bounds, so save the last valid position
+//            lastValidCenter = map_array[0].getCenter();
+//            return; 
+//    }
+//
+//        map_array[0].panTo(lastValidCenter);
+//    });
+
+    overlay = new google.maps.OverlayView();
+    var proj = overlay.getProjection();
+
+//        proj.fromPixelToLatLng = function(pixel, zoom, unbounded) {
+//                var max = Math.pow(2,zoom)*256;
+//                var lng = -(pixel.x / max) * 100 + 50;
+//                var lat = (pixel.y / max) * 100 - 50;
+//                return new google.maps.LatLng(lat, lng, unbounded);
+//            }
+
+
+        function checkBounds() {
+
+            // Get some info about the current state of the map
+            var C   = map_array[0].getCenter();
+            var lng = C.lng();
+            var lat = C.lat();
+            var B  = map_array[0].getBounds();
+            var sw = B.getSouthWest();
+            var ne = B.getNorthEast();
+
+            // Figure out if the image is outside of the artificial boundaries
+            // created by our custom projection object.
+            var new_lat = lat;
+            var new_lng = lng;
+            if (sw.lat() < -85) {
+                new_lat = lat - (sw.lat() + 85);
+            }
+            else if (ne.lat() > 85) {
+                new_lat = lat - (ne.lat() - 85);
+            }
+            if (sw.lng() < -179) {
+                new_lng = lng - (sw.lng() + 179);
+            }
+            else if (ne.lng() > 179) {
+                new_lng = lng - (ne.lng() - 179);
+            }
+            // If necessary, move the map
+            if (new_lat != lat || new_lng != lng) {
+                map_array[0].setCenter(new google.maps.LatLng(new_lat,new_lng));
+            }
+        }
+
+
+    google.maps.event.addListener(map_array[0], 'move', function() {
+       checkBounds(); 
+    });
+
+
+
+
+
+
+
+  }
+
+  $(document).ready(function() {
+
+    // Initialize Jquery UI slider
+    $( "#animation-slider" ).slider();
+
+    initialize();
+    update_timestep();
+    update_animation(); // Start animation with default settings
+    update_monitor_or_forecast();
+
+    //Collapsible sidebar elements
+    $(".nav-header").click(function() {
+      $(this).parent().find(".data-form-block").toggle();
+    });
+
+    
+   $('a').hover(function(){
+     //alert($(this).parent().attr("class")); 
+     if ($(this).parent().attr("class") == "dropdown") {
+      var string = info_box_strings[$(this).attr("id")];
+      var $name = $(this);
+      // alert(string);
+//      $(this).popover({content: string, html: true, placement: 'top', trigger: 'hover', delay: {show: 1500, hide: 100}});
+	}
+    }); 
+
+  $('a').trigger('mouseover'); 
+      
+    $('#hideBtn').click(function() {
+      $('#sidebar1').toggle();
+      if ($('#hideBtnImg').hasClass('icon-arrow-right')) {
+	  $('#hideBtnImg').removeClass('icon-arrow-right');
+          $('#hideBtnImg').addClass('icon-arrow-left');
+          $('#hideBtnImg').css({"background-color": "#FFFFFF", "border-radius" : "2px"}); 
+      } else if ($('#hideBtnImg').hasClass('icon-arrow-left')) {
+	  $('#hideBtnImg').removeClass('icon-arrow-left');
+          $('#hideBtnImg').addClass('icon-arrow-right');
+          $('#hideBtnImg').css({"background-color": "transparent", "border-radius" : "2px"}); 
+      }
+     });
+
+    $("#update_interval").click(function() {
+      var current_setting = $("ul.data-extraction li.active>a").attr('id');
+      if(""+current_setting == "none" && $("#InteractiveInterface").hasClass("active")) {update_timestep();update_animation();}
+      else if(""+current_setting == "none") {update_timestep();update_basic();}
+      else if(""+current_setting == "point" && $("#popUpDiv").is(":visible")) Create_Point_Plot();
+      else if(""+current_setting == "spatial") {update_timestep();Update_Spatial_Data_Display();}
+    });
+    $("#clear_all").click(function() {
+      var current_setting = $("ul.data-extraction li.active>a").attr('id');
+      if(""+current_setting == "none") {
+        clear_all_overlays();
+        // Turn off the active chosen datasets
+        $("ul.datalist>li").removeClass("active");
+        $("ul.datalist>li>ul.dropdown-menu>li").removeClass("active");
+        $("ul.datalist>li>a>i").removeClass("icon-ok");
+        $("ul.datalist>li>ul.dropdown-menu>li>a>i").removeClass("icon-ok");
+      }
+      else if(""+current_setting == "point") {
+        if($("#popUpDiv").is(":visible")) 
+          Hide_Data_Extraction_Popup();
+        if($("#ajax_request_load").is(":visible"))
+          $("#ajax_request_load").hide();
+      }
+      else if(""+current_setting == "spatial") {
+        Update_Listeners('spatial');
+        $("input[name='variables_spatial_data[]']:checked").prop('checked', false);
+        Update_Spatial_Data_Display();
+      }
+    });
+    $("input[name=group1]:radio").change(function() {
+      update_timestep();
+      update_animation();
+    });
+    $("input[name=plot]:radio").change(function() {
+      if($("#popUpDiv").is(":visible")) Create_Point_Plot();
+    });
+    $("input[name='sres_spatial_data']").change(function() {
+      Update_Spatial_Data_Display();
+    });
+
+    // Validation for date entry
+    $( "input[id='day_initial']" ).change(function() {
+      if($(this).val() < 1 || $(this).val() > 31)
+        $(this).val(day_initial);
+    });
+    $( "input[id='day_final']" ).change(function() {
+      if($(this).val() < 1 || $(this).val() > 31)
+        $(this).val(day_final);
+    });
+    $( "input[id='month_initial']" ).change(function() {
+      if($(this).val() < 1 || $(this).val() > 12)
+        $(this).val(month_initial);
+    });
+    $( "input[id='month_final']" ).change(function() {
+      if($(this).val() < 1 || $(this).val() > 12)
+        $(this).val(month_final);
+    });
+    $( "input[id='year_initial']" ).change(function() {
+      if($(this).val() < 1948 || $(this).val() > 2020)
+        $(this).val(year_initial);
+    });
+    $( "input[id='year_final']" ).change(function() {
+      if($(this).val() < 1948 || $(this).val() > 2020)
+        $(this).val(year_final);
+    });
+
+
+    $(".de-pills").click(function() {
+      if(!$(this).parent().hasClass("active")) { // only act on change
+        $(".de-pills").parent().removeClass("active");
+        $(this).parent().addClass("active");
+        if($("#ajax_request_load").is(":visible"))
+          $("#ajax_request_load").hide();
+      }
+    });
+    $(".mf-pills").click(function() {
+      if(!$(this).parent().hasClass("active")) { // only act on change
+        $(".mf-pills").parent().removeClass("active");
+        $(this).parent().addClass("active");
+        update_monitor_or_forecast();
+
+        if(""+$("ul.data-extraction li.active>a").attr('id') == "none")
+          $("#clear_all").click(); // when switching between monitor/forecast, clear the current animation.
+      }
+    });
+    $(".ts-pills").click(function() {
+      if(!$(this).parent().hasClass("active")) {
+        $(".ts-pills").parent().removeClass("active");
+        $(this).parent().addClass("active");
+        update_timestep();
+
+        // If running animation, update
+        if("none" == $("ul.data-extraction li.active>a").attr('id'))
+          update_basic();
+          update_animation();
+      }
+    });
+
+    $(".corm-pills-point").click(function() {
+      if(!$(this).parent().hasClass("active")) { // only act on change
+        $(".corm-pills-point").parent().removeClass("active");
+        $(this).parent().addClass("active");
+        Update_Listeners("point");
+      }
+    });
+
+    $(".corm-pills-spatial").click(function() {
+      if(!$(this).parent().hasClass("active")) { // only act on change
+        $(".corm-pills-spatial").parent().removeClass("active");
+        $(this).parent().addClass("active");
+        Update_Listeners("spatial");
+      }
+    });
+
+    // When you click a dataset from a dropdown menu...
+    // Check if it's different than the previously chosen one. If so, do a bunch of stuff.
+    $("ul.datalist>li>ul.dropdown-menu>li>a").click(function() {
+      if(!$(this).parent().hasClass("active")) {
+        $("ul.datalist>li").removeClass("active");
+        $("ul.datalist>li>ul.dropdown-menu>li").removeClass("active");
+        $("ul.datalist>li>a>i").removeClass("icon-ok");
+        $("ul.datalist>li>ul.dropdown-menu>li>a>i").removeClass("icon-ok");
+
+        $(this).parent().addClass("active");
+        $(this).parent().parent().parent().addClass("active");
+        $(this).find('i').addClass("icon-ok");
+        $(this).parent().parent().parent().find("a.dropdown-toggle>i").addClass("icon-ok");
+        
+        if ($("#InteractiveInterface").hasClass("active")) {
+          update_animation(); }
+        else {
+          update_basic(); }
+      }
+    });
+
+    // Selecting spatial data types from dropdown menus
+    $("ul.spatial-datalist>li>ul.dropdown-menu>li>a").click(function() {
+      var copyLi = $(this).parent().clone();
+      copyLi.appendTo("ul#currently-selected-vars");
+      copyLi.find('a>i').remove();
+      copyLi.find('a').prepend(copyLi.find('a').attr('id').split('--')[0] + ': '); // give new element full ID including datatype
+      copyLi.find('a').prepend("<i class='icon-remove'></i>");
+
+      // need to bind the removal click listener here, because the element did not exist at page load
+      copyLi.find('a').click(function() {
+        $("ul.spatial-datalist>li>ul.dropdown-menu>li>a#" + $(this).attr('id')).parent().show();
+        $(this).parent().remove();
+        Update_Spatial_Data_Display();
+      });
+      
+      $(this).parent().hide();
+      Update_Spatial_Data_Display();
+    });
+
+    // Animation play/pause buttons
+    $( "#pause-or-continue").click(function() {
+      if($(this).hasClass("icon-pause")) {
+        clearInterval(t);
+        $(this).removeClass("icon-pause");
+        $(this).addClass("icon-play");
+      } else {
+        t = setInterval(next_image, 1000*1/frames_per_second);
+        $(this).removeClass("icon-play");
+        $(this).addClass("icon-pause");
+      }
+    });
+
+    $("#email_spatial_data").on('keyup change', function() {
+      Update_Spatial_Data_Display();
+    });
+
+    $("textarea#input3").on('keyup', function() {
+      var remaining = $(this).attr('maxlength') - $(this).val().length;
+      $('#feedback-num-chars-remaining').text(remaining);
+    });
+
+    // Load the default dataset
+    $("ul.datalist>li>ul.dropdown-menu>li>a#" + DEFAULT_ANIMATION_DATASET).click();
+  });
+
+</script>
+</head> 
+
+<body style="width:100%; height:100%">
+<div class="container-fluid" style="width:100%; height:100%; padding-right:0px; padding-left:0px;">
+<div class="navbar navbar-inverse">
+  <div class="navbar-inner" style="border-radius: 0px"> 
+    <div class="container">
+      <a class="brand" href='index.php?locale=en'>Global Flood and Drought Monitor</a>
+      <ul class="nav" >
+        <li class="divider-vertical"></li>
+	<li id="InteractiveInterface" class="active"><a onclick="LoadInteractive()">Interactive Interface</a></li>
+        <li class="divider-vertical"></li>
+        <li id="BasicInterface"><a onclick="LoadBasic()">Basic Interface</a></li>
+        <li class="divider-vertical"></li>
+        <!--<li><a href='Resources/ADM_Background.pdf'>Background</a></li>
+        <li class="divider-vertical"></li>-->
+        <!--<li><a href='Resources/ADM_Glossary.pdf'>Glossary</a></li>
+        <li class="divider-vertical"></li>-->
+        <!---<li><a href='Resources/AWCMTutorial.pdf'>Tutorial</a></li>
+      	<li class="divider-vertical"></li>-->
+        </ul>
+        <ul class="nav pull-right">
+          <li class="divider-vertical"></li>
+          <li id="feedbackBtn"><a onclick="LoadFeedback()">Feedback</a></li>
+	  <li class="divider-vertical"></li>
+        </ul>
+    </div>
+  </div>
+</div>
+
+<div class="row-fluid" style="width:100%; position: absolute; bottom: 0px; top:40px;">
+    <div class="span12" style="height:100%; width=100%;">
+      <div id="blanket" style="display:none;"></div>
+      <div id="ajax_request_load" style="display:none;"><img src="icons/ajax-loader.gif"/></div>
+      <div id="popUpDiv" style="display:none;">
+        <!--Chart Container-->
+        <div id="popup_container"></div>
+      </div>
+
+      <div id="feedbackPopup" style="visibility:hidden; position:absolute; background:rgb(229, 227, 223); margin:auto; left: 22%; width:700px; top:60px; height:400px; z-index:9100; padding-top:15px; padding-bottom:15px; border-radius:5px; border:2px solid grey;">
+        <form id='feedbackForm' method='POST' action='' class='form-horizontal'>
+          <div>
+            <h4 style='margin-left:30px;'>Contact Us:</h4>
+          </div>
+          <div class='control-group'>
+            <label class='control-label' for='input1'>Name</label>
+            <div class='controls'>
+              <input type='text' name='contact_name' id='input1' maxlength='200' placeholder="Your name">
+            </div>
+          </div>
+          <div class='control-group'>
+            <label class='control-label' for='input2'>Email Address</label>
+            <div class='controls'>
+              <input type='text' name='contact_email' maxlength='100' id='input2' placeholder="Your email address">
+            </div>
+          </div>
+          <div class='control-group'>
+            <label class='control-label' for='input3'>Message</label>
+            <div class='controls'>
+              <textarea name='contact_message' id='input3' rows='8' class='span9' maxlength='1500' style='resize:none;' placeholder="Message to send."></textarea>
+            </div>
+            <p id="feedback-char-limit" style="margin: 0px; margin-left: 180px; margin-top:5px"><span id="feedback-num-chars-remaining">1500</span> characters remaining.</p>
+          </div>
+          <div class='form-actions' style='border-radius:0px 0px 5px 5px;'>
+            <input type='hidden' name='save' value='contact'>
+            <button type='submit' class='btn btn-primary'>Send</button>
+            <button id='closeForm' type='button' class='btn' style='margin-left:30px' onclick='clearPopup();'>Cancel</button>
+          </div>
+        </form>
+      </div>
+      <div id="Colorbar" style="visibility:hidden;"></div>
+      <div id="TimeStamp" style="visibility:hidden;"></div>
+      <div id="Logo" style="visibility:hidden;"></div>
+
+    <div id="map_canvas_1" style="max-width: none;"></div>
+    <div class="row">
+      <div id="sidebar1" class="span3 scrollDiv" style="visibility:visible; padding-right:0; position: absolute; top: 0px; background-color: rgb(240,240,240); width: auto; width:320px; right:0px; bottom: 0px;">
+         <ul class="nav nav-list" data-spy="affix" data-offset-top="900">
+  <ul class="nav nav-pills data-extraction">
+    <li class="active"><a href="javascript:void(0)" id="none" class="de-pills" onclick='Update_Listeners("none")'>Animation</a></li>
+    <li id="pointpill"><a href="javascript:void(0)" id="point" class="de-pills" onclick='Update_Listeners("point")'>Point Data</a></li>
+    <li id="spatialpill"><a href="javascript:void(0)" id="spatial" class="de-pills" onclick='Update_Listeners("spatial")'>Spatial Data</a></li>
+  </ul>
+
+  <!-- Select between Monitor and Forecast Data for Animation -->
+  <div id="monitor-or-forecast-div">
+    <li class="divider"></li>
+    <ul class="nav nav-pills monitor-or-forecast">
+      <li class="active"><a href="javascript:void(0)" id="monitor" class="mf-pills" onclick=''>Monitor</a></li>
+      <li><a href="javascript:void(0)" id="forecast" class="mf-pills" onclick=''>Forecast</a></li>
+    </ul>
+  </div>
+
+  <li class="divider"></li>
+  <div class="dummy">
+  <li id="TimeInterval" class="nav-header">Time Interval (dd/mm/yyyy)</li>
+  <div class="data-form-block">
+  <form id="AnimationForm" name="AnimationForm">
+    <ul class="nav nav-pills ts-selection">
+      <li id="daily" class="active"><a href="javascript:void(0)" class="ts-pills">Daily</a></li>
+      <li id="monthly"><a href="javascript:void(0)" class="ts-pills">Monthly</a></li>
+      <li id="yearly"><a href="javascript:void(0)" class="ts-pills">Yearly</a></li>
+    </ul>
+    <div id="initial-date-inputs" class="control-group form-inline">
+      <label style="width:40px;">Initial:</label>
+      <input id="day_initial" type="text" maxlength="2" name="day_initial" value=8 style="width:20px;">
+      <input id="month_initial" type="text" maxlength="2" name="month_initial" value=10 style="width:20px;">
+      <input id="year_initial" type="text" maxlength="4" name="year_initial" value=2013 style="width:35px;">
+	    <input type="button" value="-" class="btn btn-mini" onclick="Update_TimeStamp_MP(-1,0)">
+      <input type="button" value="+" class="btn btn-mini" onclick="Update_TimeStamp_MP(1,0)">
+    </div>
+    <div id="final-date-inputs" class="control-group form-inline">
+      <label style="width:40px;">Final:</label>
+      <input id="day_final" type="text" maxlength="2" name="day_final" value=8 style="width:20px;">
+      <input id="month_final" type="text" maxlength="2" name="month_final" value=10 style="width:20px;">
+      <input id="year_final" type="text" maxlength="4" name="year_final" value=2013 style="width:35px;">
+      <input type="button" value="-" class="btn btn-mini" onclick="Update_TimeStamp_MP(-1,1)">
+      <input type="button" value="+" class="btn btn-mini" onclick="Update_TimeStamp_MP(1,1)"><br/>
+    </div>
+  <table id="Animation-Update"><tr>
+  <td><input id="update_interval" type="button" class="btn" value=Update ></td>
+  <td><input id="clear_all" type="button" class="btn" value=Clear ></td>
+  </tr>
+  </table>
+  </form>
+  </div>
+  </div>
+
+ <!-- Slider for animation -->
+<div id="slider-div" style="display:none">
+  <span id="slider-date"></span>
+  <span style="padding-left:10px"><i id="pause-or-continue" class="icon-pause icon-large"></i></span>
+  <div id="animation-slider"></div>
+</div>
+
+<div id="Animation-Sidebar">
+  <div class="dummy">
+  <li class="divider"></li>
+  <li id=Meteorology class="nav-header">
+      Meteorology      <!--<a id=Meteorology href="#" data-toggle="popover"><img class="question_mark" src="icons/question_icon.png"></a>-->
+  </li>
+  <div class="data-form-block">
+  <ul class="nav nav-list datalist">
+          <li class="dropdown">
+        <a id=prec data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Precipitation (mm)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="prec--3B42RT_BC" href="javascript:void(0)"><i></i>Satellite Precipitation (3B42RT)</a></li>
+                    <li><a id="prec--PGF" href="javascript:void(0)"><i></i>Princeton Global Forcing Dataset</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=tmax data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Maximum Temperature (K)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="tmax--PGF" href="javascript:void(0)"><i></i>Princeton Global Forcing</a></li>
+                    <li><a id="tmax--GFS_ANALYSIS_BC" href="javascript:void(0)"><i></i>Global Forecasting System Analysis</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=tmin data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Minimum Temperature (K)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="tmin--PGF" href="javascript:void(0)"><i></i>Princeton Global Forcing</a></li>
+                    <li><a id="tmin--GFS_ANALYSIS_BC" href="javascript:void(0)"><i></i>Global Forecasting System Analysis</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=wind data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Wind (m/s)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="wind--PGF" href="javascript:void(0)"><i></i>Princeton Global Forcing</a></li>
+                    <li><a id="wind--GFS_ANALYSIS_BC" href="javascript:void(0)"><i></i>Global Forecasting System Analysis</a></li>
+                  </ul>
+      </li>
+      </ul>
+  </div>
+  </div>
+  <div class="dummy">
+  <li class="divider"></li>
+  <li id=Hydrology class="nav-header">
+      Hydrology      <!--<a id=Hydrology href="#" data-toggle="popover"><img class="question_mark" src="icons/question_icon.png"></a>-->
+  </li>
+  <div class="data-form-block">
+  <ul class="nav nav-list datalist">
+          <li class="dropdown">
+        <a id=vc1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Soil Moisture (%) - Layer 1          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="vc1--VIC_DERIVED" href="javascript:void(0)"><i></i>Derived Hydrologic Products (VIC)</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=vc2 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Soil Moisture (%) - Layer 2          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="vc2--VIC_DERIVED" href="javascript:void(0)"><i></i>Derived Hydrologic Products (VIC)</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=evap data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Evaporation (mm/day)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="evap--VIC_PGF" href="javascript:void(0)"><i></i>VIC hydrologic model (PGF)</a></li>
+                    <li><a id="evap--VIC_3B42RT" href="javascript:void(0)"><i></i>VIC hydrologic model (3B42RT)</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=runoff data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Surface Runoff (mm/day)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="runoff--VIC_PGF" href="javascript:void(0)"><i></i>VIC hydrologic model (PGF)</a></li>
+                    <li><a id="runoff--VIC_3B42RT" href="javascript:void(0)"><i></i>VIC hydrologic model (3B42RT)</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=baseflow data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Baseflow (mm/day)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="baseflow--VIC_PGF" href="javascript:void(0)"><i></i>VIC hydrologic model (PGF)</a></li>
+                    <li><a id="baseflow--VIC_3B42RT" href="javascript:void(0)"><i></i>VIC hydrologic model (3B42RT)</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=flw data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Streamflow (m^3/s)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="flw--ROUTING_VIC_PGF" href="javascript:void(0)"><i></i>VIC hydrologic model (PGF)</a></li>
+                    <li><a id="flw--ROUTING_VIC_3B42RT" href="javascript:void(0)"><i></i>VIC hydrologic model (3B42RT)</a></li>
+                  </ul>
+      </li>
+      </ul>
+  </div>
+  </div>
+  <div class="dummy">
+  <li class="divider"></li>
+  <li id=Indices class="nav-header">
+      Indices      <!--<a id=Indices href="#" data-toggle="popover"><img class="question_mark" src="icons/question_icon.png"></a>-->
+  </li>
+  <div class="data-form-block">
+  <ul class="nav nav-list datalist">
+          <li class="dropdown">
+        <a id=spi1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (1 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi1--SPI" href="javascript:void(0)"><i></i>Derived Meteorology</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=spi3 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (3 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi3--SPI" href="javascript:void(0)"><i></i>Derived Meteorology</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=spi6 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (6 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi6--SPI" href="javascript:void(0)"><i></i>Derived Meteorology</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=spi12 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (12 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi12--SPI" href="javascript:void(0)"><i></i>Derived Meteorology</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=vcpct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Drought Index (%)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="vcpct--VIC_DERIVED" href="javascript:void(0)"><i></i>Derived Hydrology</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=pct30day data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          NDVI Percentile (30-day moving average)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="pct30day--MOD09_NDVI_MA_DERIVED" href="javascript:void(0)"><i></i>MODIS</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=flw_pct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Streamflow Percentile (%)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="flw_pct--ROUTING_VIC_DERIVED" href="javascript:void(0)"><i></i>VIC hydrologic model</a></li>
+                  </ul>
+      </li>
+      </ul>
+  </div>
+  </div>
+  <div class="dummy">
+  <li class="divider"></li>
+  <li id=Surface Fluxes class="nav-header">
+      Surface Fluxes      <!--<a id=Surface Fluxes href="#" data-toggle="popover"><img class="question_mark" src="icons/question_icon.png"></a>-->
+  </li>
+  <div class="data-form-block">
+  <ul class="nav nav-list datalist">
+          <li class="dropdown">
+        <a id=r_net data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Net Radiation (W/m^2)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="r_net--VIC_PGF" href="javascript:void(0)"><i></i>VIC hydrologic model (PGF)</a></li>
+                    <li><a id="r_net--VIC_3B42RT" href="javascript:void(0)"><i></i>VIC hydrologic model (3B42RT)</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=net_long data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Net Longwave Radiation (W/m^2)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="net_long--VIC_PGF" href="javascript:void(0)"><i></i>VIC hydrologic model (PGF)</a></li>
+                    <li><a id="net_long--VIC_3B42RT" href="javascript:void(0)"><i></i>VIC hydrologic model (3B42RT)</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=net_short data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Net Shortwave Radiation (W/m^2)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="net_short--VIC_PGF" href="javascript:void(0)"><i></i>VIC hydrologic model (PGF)</a></li>
+                    <li><a id="net_short--VIC_3B42RT" href="javascript:void(0)"><i></i>VIC hydrologic model (3B42RT)</a></li>
+                  </ul>
+      </li>
+      </ul>
+  </div>
+  </div>
+  <div class="dummy">
+  <li class="divider"></li>
+  <li id=Vegetation class="nav-header">
+      Vegetation      <!--<a id=Vegetation href="#" data-toggle="popover"><img class="question_mark" src="icons/question_icon.png"></a>-->
+  </li>
+  <div class="data-form-block">
+  <ul class="nav nav-list datalist">
+          <li class="dropdown">
+        <a id=ndvi30 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          NDVI (30-day moving average)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="ndvi30--MOD09_NDVI_MA" href="javascript:void(0)"><i></i>MODIS</a></li>
+                  </ul>
+      </li>
+      </ul>
+  </div>
+  </div>
+  <div class="dummy">
+  <li class="divider"></li>
+  <li id=Forecast class="nav-header">
+      Forecast      <!--<a id=Forecast href="#" data-toggle="popover"><img class="question_mark" src="icons/question_icon.png"></a>-->
+  </li>
+  <div class="data-form-block">
+  <ul class="nav nav-list datalist">
+          <li class="dropdown">
+        <a id=spi1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (1 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi1--CMC1-CanCM3" href="javascript:void(0)"><i></i>CMC1-CanCM3</a></li>
+                    <li><a id="spi1--GFDL-CM2p1-aer04" href="javascript:void(0)"><i></i>GFDL-CM2p1-aer04</a></li>
+                    <li><a id="spi1--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i></i>COLA-RSMAS-CCSM3</a></li>
+                    <li><a id="spi1--NASA-GMAO-062012" href="javascript:void(0)"><i></i>NASA-GMAO-062012</a></li>
+                    <li><a id="spi1--CMC2-CanCM4" href="javascript:void(0)"><i></i>CMC2-CanCM4</a></li>
+                    <li><a id="spi1--NCEP-CFSv2" href="javascript:void(0)"><i></i>NCEP-CFSv2</a></li>
+                    <li><a id="spi1--MultiModel" href="javascript:void(0)"><i></i>Multi Model Mean</a></li>
+                    <li><a id="spi1--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=spi3 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (3 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi3--CMC1-CanCM3" href="javascript:void(0)"><i></i>CMC1-CanCM3</a></li>
+                    <li><a id="spi3--GFDL-CM2p1-aer04" href="javascript:void(0)"><i></i>GFDL-CM2p1-aer04</a></li>
+                    <li><a id="spi3--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i></i>COLA-RSMAS-CCSM3</a></li>
+                    <li><a id="spi3--NASA-GMAO-062012" href="javascript:void(0)"><i></i>NASA-GMAO-062012</a></li>
+                    <li><a id="spi3--CMC2-CanCM4" href="javascript:void(0)"><i></i>CMC2-CanCM4</a></li>
+                    <li><a id="spi3--NCEP-CFSv2" href="javascript:void(0)"><i></i>NCEP-CFSv2</a></li>
+                    <li><a id="spi3--MultiModel" href="javascript:void(0)"><i></i>Multi Model Mean</a></li>
+                    <li><a id="spi3--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=spi6 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (6 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi6--CMC1-CanCM3" href="javascript:void(0)"><i></i>CMC1-CanCM3</a></li>
+                    <li><a id="spi6--GFDL-CM2p1-aer04" href="javascript:void(0)"><i></i>GFDL-CM2p1-aer04</a></li>
+                    <li><a id="spi6--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i></i>COLA-RSMAS-CCSM3</a></li>
+                    <li><a id="spi6--NASA-GMAO-062012" href="javascript:void(0)"><i></i>NASA-GMAO-062012</a></li>
+                    <li><a id="spi6--CMC2-CanCM4" href="javascript:void(0)"><i></i>CMC2-CanCM4</a></li>
+                    <li><a id="spi6--NCEP-CFSv2" href="javascript:void(0)"><i></i>NCEP-CFSv2</a></li>
+                    <li><a id="spi6--MultiModel" href="javascript:void(0)"><i></i>Multi Model Mean</a></li>
+                    <li><a id="spi6--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=spi12 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          SPI (12 month)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="spi12--CMC1-CanCM3" href="javascript:void(0)"><i></i>CMC1-CanCM3</a></li>
+                    <li><a id="spi12--GFDL-CM2p1-aer04" href="javascript:void(0)"><i></i>GFDL-CM2p1-aer04</a></li>
+                    <li><a id="spi12--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i></i>COLA-RSMAS-CCSM3</a></li>
+                    <li><a id="spi12--NASA-GMAO-062012" href="javascript:void(0)"><i></i>NASA-GMAO-062012</a></li>
+                    <li><a id="spi12--CMC2-CanCM4" href="javascript:void(0)"><i></i>CMC2-CanCM4</a></li>
+                    <li><a id="spi12--NCEP-CFSv2" href="javascript:void(0)"><i></i>NCEP-CFSv2</a></li>
+                    <li><a id="spi12--MultiModel" href="javascript:void(0)"><i></i>Multi Model Mean</a></li>
+                    <li><a id="spi12--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=prec data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Precipitation (mm)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="prec--CMC1-CanCM3" href="javascript:void(0)"><i></i>CMC1-CanCM3</a></li>
+                    <li><a id="prec--GFDL-CM2p1-aer04" href="javascript:void(0)"><i></i>GFDL-CM2p1-aer04</a></li>
+                    <li><a id="prec--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i></i>COLA-RSMAS-CCSM3</a></li>
+                    <li><a id="prec--NASA-GMAO-062012" href="javascript:void(0)"><i></i>NASA-GMAO-062012</a></li>
+                    <li><a id="prec--CMC2-CanCM4" href="javascript:void(0)"><i></i>CMC2-CanCM4</a></li>
+                    <li><a id="prec--NCEP-CFSv2" href="javascript:void(0)"><i></i>NCEP-CFSv2</a></li>
+                    <li><a id="prec--MultiModel" href="javascript:void(0)"><i></i>Multi Model Mean</a></li>
+                    <li><a id="prec--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=t2m data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Average temperature (C)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="t2m--CMC1-CanCM3" href="javascript:void(0)"><i></i>CMC1-CanCM3</a></li>
+                    <li><a id="t2m--GFDL-CM2p1-aer04" href="javascript:void(0)"><i></i>GFDL-CM2p1-aer04</a></li>
+                    <li><a id="t2m--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i></i>COLA-RSMAS-CCSM3</a></li>
+                    <li><a id="t2m--NASA-GMAO-062012" href="javascript:void(0)"><i></i>NASA-GMAO-062012</a></li>
+                    <li><a id="t2m--CMC2-CanCM4" href="javascript:void(0)"><i></i>CMC2-CanCM4</a></li>
+                    <li><a id="t2m--NCEP-CFSv2" href="javascript:void(0)"><i></i>NCEP-CFSv2</a></li>
+                    <li><a id="t2m--MultiModel" href="javascript:void(0)"><i></i>Multi Model Mean</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=t2ano data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Temperature Anomaly (C)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="t2ano--CMC1-CanCM3" href="javascript:void(0)"><i></i>CMC1-CanCM3</a></li>
+                    <li><a id="t2ano--GFDL-CM2p1-aer04" href="javascript:void(0)"><i></i>GFDL-CM2p1-aer04</a></li>
+                    <li><a id="t2ano--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i></i>COLA-RSMAS-CCSM3</a></li>
+                    <li><a id="t2ano--NASA-GMAO-062012" href="javascript:void(0)"><i></i>NASA-GMAO-062012</a></li>
+                    <li><a id="t2ano--CMC2-CanCM4" href="javascript:void(0)"><i></i>CMC2-CanCM4</a></li>
+                    <li><a id="t2ano--NCEP-CFSv2" href="javascript:void(0)"><i></i>NCEP-CFSv2</a></li>
+                    <li><a id="t2ano--MultiModel" href="javascript:void(0)"><i></i>Multi Model Mean</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=tmax data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Maximum Temperature (C)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="tmax--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=tmin data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Minimum Temperature (C)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="tmin--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=wind data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Wind (m/s)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="wind--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=vc1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Soil Moisture (%) - Layer 1          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="vc1--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=vc2 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Soil Moisture (%) - Layer 2          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="vc2--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=evap data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Evaporation (mm/day)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="evap--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=runoff data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Surface Runoff (mm/day)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="runoff--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=r_net data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Net Radiation (W/m^2)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="r_net--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=net_long data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Net Longwave Radiation (W/m^2)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="net_long--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=net_short data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Net Shortwave Radiation (W/m^2)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="net_short--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=baseflow data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Baseflow (mm/day)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="baseflow--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=vcpct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Drought Index (%)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="vcpct--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=flw_pct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Streamflow Percentile (%)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="flw_pct--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+          <li class="dropdown">
+        <a id=flw data-toggle="dropdown" href="javascript:void(0)"><i></i>
+          Streamflow (m^3/s)          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          <li class="nav-header">Dataset</li>
+                    <li><a id="flw--GFS_7DAY_FORECAST" href="javascript:void(0)"><i></i>GFS 7-day forecast</a></li>
+                  </ul>
+      </li>
+      </ul>
+  </div>
+  </div>
+</div>
+
+<!--Sidebar for point data selection - hidden by default -->
+<div id="Point-Sidebar" style="display: none">
+  <li class="divider"></li>
+  <li class="nav-header">Point Data Selection</li>
+  <div class="data-form-block">  
+  
+  <ul id="point-corm" class="nav nav-pills click-or-manual">
+    <li class="active"><a href="javascript:void(0)" id="point-mapclick" class="corm-pills-point">Map Click</a></li>
+    <li><a href="javascript:void(0)" id="point-manual" class="corm-pills-point">Manual Entry</a></li>
+  </ul>
+
+  <div id="point-ll-mapclick">
+    Latitude: <span id="point-latitude"></span>
+    <br>
+    Longitude: <span id="point-longitude"></span>
+    <br>
+  </div>
+
+  <div id="point-ll-manual" style="display:none">
+    <form class="form-horizontal manual-entry-form" id="point-manual-entry-form">
+      <div class="control-group">
+        <label class="control-label" for="point-manual-latitude">Latitude:</label>
+        <div class="controls">
+          <input type="text" id="point-manual-latitude">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="point-manual-longitude">Longitude:</label>
+        <div class="controls">
+          <input type="text" id="point-manual-longitude">
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="controls">
+          <button id="point-manual-submit" type="submit" class="btn">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="radio inline">
+    <label><input type="radio" name="plot" value="Indices" checked=checked>Indices</label>
+    <label><input type="radio" name="plot" value="Water_Balance" >Water Balance</label>
+    <label><input type="radio" name="plot" value="Surface_Fluxes" >Surface Fluxes</label>
+    <label><input type="radio" name="plot" value="Streamflow" >Streamflow</label>
+    <label><input type="radio" name="plot" value="Soil_Moisture_1" >Soil Moisture (Layer 1)</label>
+    <label><input type="radio" name="plot" value="Soil_Moisture_2" >Soil Moisture (Layer 2)</label>
+    <label><input type="radio" name="plot" value="Vegetation" >Vegetation</label>
+    <label><input type="radio" name="plot" value="Meteorology" >Meteorology</label>
+  </div>
+  <br>
+  <i>Create Corresponding Data File?</i>
+  <br>
+  <div class="radio inline">
+    <label><input type="radio" name="Create_Text_Data" value="yes">Yes</label>
+    <label><input type="radio" name="Create_Text_Data" value="no" checked=checked>No</label>
+  </div>
+  <br>
+  <a id='point_data_link' href="" target="_blank" download="" style="display:none">Download Data</a>
+  <i>Only the last 1000 timesteps from the selected final date will be displayed</i>
+</div>
+</div>
+
+<!--Sidebar for spatial data selection - hidden by default -->
+<div id="Spatial-Sidebar" style="display: none">
+  <li class="divider"></li>
+  <li class="nav-header">Spatial Data Selection</li>
+  
+  <ul id="spatial-corm" class="nav nav-pills click-or-manual">
+    <li class="active"><a href="javascript:void(0)" id="spatial-mapclick" class="corm-pills-spatial">Map Click</a></li>
+    <li><a href="javascript:void(0)" id="spatial-manual" class="corm-pills-spatial">Manual Entry</a></li>
+  </ul>
+
+  <div id="spatial-ll-manual" style="display:none">
+    <form class="form-horizontal manual-entry-form" id="spatial-manual-entry-form">
+      <div class="control-group">
+        <label class="control-label" for="spatial-manual-min-latitude">Min. Lat.:</label>
+        <div class="controls">
+          <input type="text" id="spatial-manual-min-latitude">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="spatial-manual-max-latitude">Max. Lat.:</label>
+        <div class="controls">
+          <input type="text" id="spatial-manual-max-latitude">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="spatial-manual-min-longitude">Min. Long.:</label>
+        <div class="controls">
+          <input type="text" id="spatial-manual-min-longitude">
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="spatial-manual-max-longitude">Max. Long.:</label>
+        <div class="controls">
+          <input type="text" id="spatial-manual-max-longitude">
+        </div>
+      </div>
+      <div class="control-group">
+        <div class="controls">
+          <button id="spatial-manual-submit" type="submit" class="btn">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <ul id="currently-selected-vars" class="nav nav-list">
+  </ul>
+
+            <div class="dummy">
+          <li class="divider"></li>
+          <li id=Meteorology_spatial class="nav-header expandable">
+              Meteorology              <b class="caret centeredcaret"></b>
+          </li>
+          <div class="data-form-block" style="display:none">
+
+          <ul class="nav nav-list spatial-datalist">
+                              <li class="dropdown">
+                  <a id=prec data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Precipitation (mm)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="prec--3B42RT_BC" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Satellite Precipitation (3B42RT)</a></li>
+                                          <li><a id="prec--PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Princeton Global Forcing Dataset</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=tmax data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Maximum Temperature (K)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="tmax--PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Princeton Global Forcing</a></li>
+                                          <li><a id="tmax--GFS_ANALYSIS_BC" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Global Forecasting System Analysis</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=tmin data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Minimum Temperature (K)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="tmin--PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Princeton Global Forcing</a></li>
+                                          <li><a id="tmin--GFS_ANALYSIS_BC" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Global Forecasting System Analysis</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=wind data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Wind (m/s)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="wind--PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Princeton Global Forcing</a></li>
+                                          <li><a id="wind--GFS_ANALYSIS_BC" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Global Forecasting System Analysis</a></li>
+                                      </ul>
+                </li>
+                </ul>
+        </div>
+        </div>
+            <div class="dummy">
+          <li class="divider"></li>
+          <li id=Hydrology_spatial class="nav-header expandable">
+              Hydrology              <b class="caret centeredcaret"></b>
+          </li>
+          <div class="data-form-block" style="display:none">
+
+          <ul class="nav nav-list spatial-datalist">
+                              <li class="dropdown">
+                  <a id=vc1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Soil Moisture (%) - Layer 1                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="vc1--VIC_DERIVED" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Derived Hydrologic Products (VIC)</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=vc2 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Soil Moisture (%) - Layer 2                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="vc2--VIC_DERIVED" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Derived Hydrologic Products (VIC)</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=evap data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Evaporation (mm/day)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="evap--VIC_PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (PGF)</a></li>
+                                          <li><a id="evap--VIC_3B42RT" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (3B42RT)</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=runoff data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Surface Runoff (mm/day)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="runoff--VIC_PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (PGF)</a></li>
+                                          <li><a id="runoff--VIC_3B42RT" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (3B42RT)</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=baseflow data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Baseflow (mm/day)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="baseflow--VIC_PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (PGF)</a></li>
+                                          <li><a id="baseflow--VIC_3B42RT" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (3B42RT)</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=flw data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Streamflow (m^3/s)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="flw--ROUTING_VIC_PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (PGF)</a></li>
+                                          <li><a id="flw--ROUTING_VIC_3B42RT" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (3B42RT)</a></li>
+                                      </ul>
+                </li>
+                </ul>
+        </div>
+        </div>
+            <div class="dummy">
+          <li class="divider"></li>
+          <li id=Indices_spatial class="nav-header expandable">
+              Indices              <b class="caret centeredcaret"></b>
+          </li>
+          <div class="data-form-block" style="display:none">
+
+          <ul class="nav nav-list spatial-datalist">
+                              <li class="dropdown">
+                  <a id=spi1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (1 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi1--SPI" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Derived Meteorology</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=spi3 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (3 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi3--SPI" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Derived Meteorology</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=spi6 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (6 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi6--SPI" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Derived Meteorology</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=spi12 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (12 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi12--SPI" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Derived Meteorology</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=vcpct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Drought Index (%)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="vcpct--VIC_DERIVED" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Derived Hydrology</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=pct30day data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    NDVI Percentile (30-day moving average)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="pct30day--MOD09_NDVI_MA_DERIVED" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>MODIS</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=flw_pct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Streamflow Percentile (%)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="flw_pct--ROUTING_VIC_DERIVED" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model</a></li>
+                                      </ul>
+                </li>
+                </ul>
+        </div>
+        </div>
+            <div class="dummy">
+          <li class="divider"></li>
+          <li id=Surface Fluxes_spatial class="nav-header expandable">
+              Surface Fluxes              <b class="caret centeredcaret"></b>
+          </li>
+          <div class="data-form-block" style="display:none">
+
+          <ul class="nav nav-list spatial-datalist">
+                              <li class="dropdown">
+                  <a id=r_net data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Net Radiation (W/m^2)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="r_net--VIC_PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (PGF)</a></li>
+                                          <li><a id="r_net--VIC_3B42RT" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (3B42RT)</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=net_long data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Net Longwave Radiation (W/m^2)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="net_long--VIC_PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (PGF)</a></li>
+                                          <li><a id="net_long--VIC_3B42RT" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (3B42RT)</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=net_short data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Net Shortwave Radiation (W/m^2)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="net_short--VIC_PGF" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (PGF)</a></li>
+                                          <li><a id="net_short--VIC_3B42RT" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>VIC hydrologic model (3B42RT)</a></li>
+                                      </ul>
+                </li>
+                </ul>
+        </div>
+        </div>
+            <div class="dummy">
+          <li class="divider"></li>
+          <li id=Vegetation_spatial class="nav-header expandable">
+              Vegetation              <b class="caret centeredcaret"></b>
+          </li>
+          <div class="data-form-block" style="display:none">
+
+          <ul class="nav nav-list spatial-datalist">
+                              <li class="dropdown">
+                  <a id=ndvi30 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    NDVI (30-day moving average)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="ndvi30--MOD09_NDVI_MA" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>MODIS</a></li>
+                                      </ul>
+                </li>
+                </ul>
+        </div>
+        </div>
+            <div class="dummy">
+          <li class="divider"></li>
+          <li id=Forecast_spatial class="nav-header expandable">
+              Forecast              <b class="caret centeredcaret"></b>
+          </li>
+          <div class="data-form-block" style="display:none">
+
+          <ul class="nav nav-list spatial-datalist">
+                              <li class="dropdown">
+                  <a id=spi1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (1 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi1--CMC1-CanCM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC1-CanCM3</a></li>
+                                          <li><a id="spi1--GFDL-CM2p1-aer04" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFDL-CM2p1-aer04</a></li>
+                                          <li><a id="spi1--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>COLA-RSMAS-CCSM3</a></li>
+                                          <li><a id="spi1--NASA-GMAO-062012" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NASA-GMAO-062012</a></li>
+                                          <li><a id="spi1--CMC2-CanCM4" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC2-CanCM4</a></li>
+                                          <li><a id="spi1--NCEP-CFSv2" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NCEP-CFSv2</a></li>
+                                          <li><a id="spi1--MultiModel" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Multi Model Mean</a></li>
+                                          <li><a id="spi1--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=spi3 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (3 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi3--CMC1-CanCM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC1-CanCM3</a></li>
+                                          <li><a id="spi3--GFDL-CM2p1-aer04" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFDL-CM2p1-aer04</a></li>
+                                          <li><a id="spi3--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>COLA-RSMAS-CCSM3</a></li>
+                                          <li><a id="spi3--NASA-GMAO-062012" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NASA-GMAO-062012</a></li>
+                                          <li><a id="spi3--CMC2-CanCM4" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC2-CanCM4</a></li>
+                                          <li><a id="spi3--NCEP-CFSv2" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NCEP-CFSv2</a></li>
+                                          <li><a id="spi3--MultiModel" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Multi Model Mean</a></li>
+                                          <li><a id="spi3--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=spi6 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (6 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi6--CMC1-CanCM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC1-CanCM3</a></li>
+                                          <li><a id="spi6--GFDL-CM2p1-aer04" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFDL-CM2p1-aer04</a></li>
+                                          <li><a id="spi6--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>COLA-RSMAS-CCSM3</a></li>
+                                          <li><a id="spi6--NASA-GMAO-062012" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NASA-GMAO-062012</a></li>
+                                          <li><a id="spi6--CMC2-CanCM4" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC2-CanCM4</a></li>
+                                          <li><a id="spi6--NCEP-CFSv2" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NCEP-CFSv2</a></li>
+                                          <li><a id="spi6--MultiModel" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Multi Model Mean</a></li>
+                                          <li><a id="spi6--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=spi12 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    SPI (12 month)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="spi12--CMC1-CanCM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC1-CanCM3</a></li>
+                                          <li><a id="spi12--GFDL-CM2p1-aer04" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFDL-CM2p1-aer04</a></li>
+                                          <li><a id="spi12--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>COLA-RSMAS-CCSM3</a></li>
+                                          <li><a id="spi12--NASA-GMAO-062012" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NASA-GMAO-062012</a></li>
+                                          <li><a id="spi12--CMC2-CanCM4" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC2-CanCM4</a></li>
+                                          <li><a id="spi12--NCEP-CFSv2" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NCEP-CFSv2</a></li>
+                                          <li><a id="spi12--MultiModel" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Multi Model Mean</a></li>
+                                          <li><a id="spi12--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=prec data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Precipitation (mm)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="prec--CMC1-CanCM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC1-CanCM3</a></li>
+                                          <li><a id="prec--GFDL-CM2p1-aer04" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFDL-CM2p1-aer04</a></li>
+                                          <li><a id="prec--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>COLA-RSMAS-CCSM3</a></li>
+                                          <li><a id="prec--NASA-GMAO-062012" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NASA-GMAO-062012</a></li>
+                                          <li><a id="prec--CMC2-CanCM4" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC2-CanCM4</a></li>
+                                          <li><a id="prec--NCEP-CFSv2" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NCEP-CFSv2</a></li>
+                                          <li><a id="prec--MultiModel" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Multi Model Mean</a></li>
+                                          <li><a id="prec--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=t2m data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Average temperature (C)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="t2m--CMC1-CanCM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC1-CanCM3</a></li>
+                                          <li><a id="t2m--GFDL-CM2p1-aer04" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFDL-CM2p1-aer04</a></li>
+                                          <li><a id="t2m--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>COLA-RSMAS-CCSM3</a></li>
+                                          <li><a id="t2m--NASA-GMAO-062012" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NASA-GMAO-062012</a></li>
+                                          <li><a id="t2m--CMC2-CanCM4" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC2-CanCM4</a></li>
+                                          <li><a id="t2m--NCEP-CFSv2" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NCEP-CFSv2</a></li>
+                                          <li><a id="t2m--MultiModel" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Multi Model Mean</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=t2ano data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Temperature Anomaly (C)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="t2ano--CMC1-CanCM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC1-CanCM3</a></li>
+                                          <li><a id="t2ano--GFDL-CM2p1-aer04" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFDL-CM2p1-aer04</a></li>
+                                          <li><a id="t2ano--COLA-RSMAS-CCSM3" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>COLA-RSMAS-CCSM3</a></li>
+                                          <li><a id="t2ano--NASA-GMAO-062012" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NASA-GMAO-062012</a></li>
+                                          <li><a id="t2ano--CMC2-CanCM4" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>CMC2-CanCM4</a></li>
+                                          <li><a id="t2ano--NCEP-CFSv2" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>NCEP-CFSv2</a></li>
+                                          <li><a id="t2ano--MultiModel" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>Multi Model Mean</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=tmax data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Maximum Temperature (C)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="tmax--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=tmin data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Minimum Temperature (C)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="tmin--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=wind data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Wind (m/s)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="wind--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=vc1 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Soil Moisture (%) - Layer 1                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="vc1--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=vc2 data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Soil Moisture (%) - Layer 2                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="vc2--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=evap data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Evaporation (mm/day)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="evap--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=runoff data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Surface Runoff (mm/day)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="runoff--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=r_net data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Net Radiation (W/m^2)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="r_net--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=net_long data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Net Longwave Radiation (W/m^2)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="net_long--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=net_short data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Net Shortwave Radiation (W/m^2)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="net_short--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=baseflow data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Baseflow (mm/day)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="baseflow--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=vcpct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Drought Index (%)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="vcpct--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=flw_pct data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Streamflow Percentile (%)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="flw_pct--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                      <li class="dropdown">
+                  <a id=flw data-toggle="dropdown" href="javascript:void(0)"><i></i>
+                    Streamflow (m^3/s)                    <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li class="nav-header">Dataset</li>
+                                          <li><a id="flw--GFS_7DAY_FORECAST" href="javascript:void(0)"><i class="icon-plus-sign" style="color:#5cb85c"></i>GFS 7-day forecast</a></li>
+                                      </ul>
+                </li>
+                </ul>
+        </div>
+        </div>
+    
+  <li class="divider"></li>
+
+  <div class="btn-group form-inline">
+    <!--<label class="radio inline control-label">Resolution: </label>-->
+    <!--<label class="radio inline">
+      <input type="radio" name="sres_spatial_data" value="0.25" checked>0.25&deg;
+    </label>-->
+    <!--
+    <label class="radio inline">
+      <input type="radio" name="sres_spatial_data" value="0.25" checked>0.25&deg;
+    </label>
+    <label class="radio inline">
+      <input type="radio" name="sres_spatial_data" value="1.0">1.0&deg;
+    </label>
+    -->
+  </div>
+
+  <div class="btn-group form-inline" style="margin-left: 0px">
+    <label class="radio inline control-label">File Format: </label>
+    <label class="radio inline"><input type="radio" name="format_spatial_data" value="arc_ascii">arc ascii</label>
+    <label class="radio inline"><input type="radio" name="format_spatial_data" value="netcdf" checked>netcdf</label><br>
+  </div>
+  <br>
+  <br>
+  <input type="text" id = "email_spatial_data" name="email_spatial_data" placeholder="Email address"><br>
+  <button type="button" id="submit_request_button" onclick="Submit_Spatial_Data()">Submit Data Request</button>
+  <br>
+  <span id="est_dl_size_holder">Estimated Download Size: <span id="estimated-download-size">0</span></span>
+  <br>
+  <p id="npts_warning" style="color:red; display:none">Please select a region.</p>
+  <p id="nvars_warning" style="color:red; display:none">Please select variables.</p>
+  <p id="email_warning" style="color:red; display:none">Please provide an email.</p>
+  <p id="download_size_warning" style="color:red; display:none">The current request exceeds 1 GB. Please reduce the size of your request.</p>
+
+</div>
+</ul>
+        </div>      
+     <div id="basic_interface1" class="span11 scrollDiv" style="visibility:hidden; overflow:hidden; position: absolute; top:0px; bottom:0px; margin-left:0; margin-right:0;"></div>
+     </div>
+     </div>
+   <div id="hideBtn"><i id="hideBtnImg" class="icon-arrow-right icon-large" style="position: absolute; top:0px; right:0px; z-index: 9100;"></i></div>
+</div>
+</div>
+</body>
+</html>
+
